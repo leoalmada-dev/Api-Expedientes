@@ -1,14 +1,11 @@
 const { Rol } = require('../models');
 
-async function seedRoles() {
+module.exports = async function seedRoles() {
   await Rol.bulkCreate([
     { nombre: 'admin' },
+    { nombre: 'supervisor' },
     { nombre: 'operador' },
-    { nombre: 'usuario' }
+    { nombre: 'visualizador' }
   ], { ignoreDuplicates: true });
-
   console.log('✔ Roles precargados');
-  process.exit();
-}
-
-seedRoles();
+};
