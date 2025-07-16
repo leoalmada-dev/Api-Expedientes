@@ -12,7 +12,7 @@ module.exports = async function seedUsuarios() {
       unidadId: 1
     },
     {
-      nombre: 'Supervisora',
+      nombre: 'Supervisor',
       ci: '23456789',
       correo: 'supervisor@demo.com',
       contraseña: await bcrypt.hash('supervisor123', 10),

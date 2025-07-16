@@ -4,12 +4,23 @@ const { Usuario, Rol } = require("../models");
 
 // Login de usuario por CI
 exports.login = async (req, res) => {
+  console.log("---------------------------------");
+  console.log("Método:", req.method);
+  console.log("Endpoint:", req.originalUrl);
+  console.log("Headers:", req.headers);
+  console.log("Query:", req.query);
+  console.log("Body:", req.body);
+  console.log("---------------------------------");
   try {
     const { usuario, contraseña } = req.body; // usuario = CI
 
+    // Buscá el usuario e incluí el rol asociado
     const usuarioEncontrado = await Usuario.findOne({
       where: { ci: usuario },
-      include: Rol,
+      include: {
+        model: Rol,
+        attributes: ["id", "nombre"],
+      },
     });
 
     if (!usuarioEncontrado) {
@@ -24,13 +35,28 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
+    // Incluí el nombre y el id del rol en el token
     const token = jwt.sign(
       { id: usuarioEncontrado.id, rol: usuarioEncontrado.Rol.nombre },
       process.env.JWT_SECRET,
       { expiresIn: "8h" }
     );
 
-    res.json({ token });
+    // Devolvé el token y los datos básicos del usuario y rol
+    res.json({
+      token,
+      usuario: {
+        id: usuarioEncontrado.id,
+        nombre: usuarioEncontrado.nombre,
+        ci: usuarioEncontrado.ci,
+        correo: usuarioEncontrado.correo,
+        rol: {
+          id: usuarioEncontrado.Rol.id,
+          nombre: usuarioEncontrado.Rol.nombre,
+        },
+        unidadId: usuarioEncontrado.unidadId,
+      },
+    });
   } catch (error) {
     console.error("Error en login:", error);
     res.status(500).json({ error: "Error interno en login" });

@@ -1,8 +1,21 @@
 const express = require("express");
+const cors = require('cors');
 const app = express();
 require("dotenv").config();
 
 app.use(express.json());
+
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "http://10.100.66.32:3000",
+    "http://10.100.66.32:5173",
+    "http://10.100.66.32",
+    "http://localhost:5173",
+  ],
+  credentials: true,
+}));
+
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));
