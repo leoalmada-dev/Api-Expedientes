@@ -9,7 +9,8 @@ module.exports = async function seedMovimientos() {
       unidadDestinoId: 1,
       unidadOrigenId: null,
       usuarioId: 1,
-      observaciones: "Ingreso inicial"
+      observaciones: "Ingreso inicial",
+      eliminado: false
     },
     {
       expedienteId: 1,
@@ -18,7 +19,8 @@ module.exports = async function seedMovimientos() {
       unidadDestinoId: 2,
       unidadOrigenId: 1,
       usuarioId: 1,
-      observaciones: "Enviado a Jurídica"
+      observaciones: "Enviado a Jurídica",
+      eliminado: false
     },
     {
       expedienteId: 2,
@@ -27,7 +29,8 @@ module.exports = async function seedMovimientos() {
       unidadDestinoId: 1,
       unidadOrigenId: null,
       usuarioId: 2,
-      observaciones: "Ingreso por ciudadano"
+      observaciones: "Ingreso por ciudadano",
+      eliminado: false
     }
   ], { ignoreDuplicates: true });
   console.log("✔ Movimientos precargados");

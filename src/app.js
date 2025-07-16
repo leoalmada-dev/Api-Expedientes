@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 require("dotenv").config();
-const bcrypt = require('bcryptjs');
 
 app.use(express.json());
 
@@ -13,71 +12,14 @@ app.use("/movimientos", require("./routes/movimiento"));
 
 // Importar todos los modelos desde el index de modelos
 const models = require("./models");
-const { sequelize, Rol, Unidad, Usuario } = models;
+const { sequelize } = models;
 
 const PORT = process.env.PORT || 3000;
 
 sequelize
-  .sync({ alter: true })
-  .then(async () => {
-    // Precargar roles
-    await Rol.bulkCreate(
-      [
-        { nombre: "admin" },
-        { nombre: "supervisor" },
-        { nombre: "operador" },
-        { nombre: "visualizador" },
-      ],
-      { ignoreDuplicates: true }
-    );
-
-    // Precargar unidades
-    await Unidad.bulkCreate(
-      [
-        { nombre: "Secretaría General" },
-        { nombre: "Jurídica" },
-        { nombre: "Archivo" },
-        { nombre: "Externo" },
-      ],
-      { ignoreDuplicates: true }
-    );
-
-    // Precargar usuarios asignando rol y unidades previas
-    await models.Usuario.bulkCreate(
-      [
-        {
-          nombre: "Admin",
-          correo: "admin@demo.com",
-          contraseña: await bcrypt.hash("admin123", 10),
-          rolId: 1,
-          unidadId: 1,
-        },
-        {
-          nombre: "Supervisora",
-          correo: "supervisor@demo.com",
-          contraseña: await bcrypt.hash("supervisor123", 10),
-          rolId: 2,
-          unidadId: 1,
-        },
-        {
-          nombre: "Operador",
-          correo: "operador@demo.com",
-          contraseña: await bcrypt.hash("operador123", 10),
-          rolId: 3,
-          unidadId: 1,
-        },
-        {
-          nombre: "Visualizador",
-          correo: "visualizador@demo.com",
-          contraseña: await bcrypt.hash("visual123", 10),
-          rolId: 4,
-          unidadId: 1,
-        },
-      ],
-      { ignoreDuplicates: true }
-    );
-
-    app.listen(PORT, () => {
+  .sync({ alter: true }) // Cambia a { force: true } si querés limpiar TODO
+  .then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Servidor corriendo en el puerto ${PORT}`);
     });
   })

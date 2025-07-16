@@ -4,6 +4,7 @@ const Usuario = require('./Usuario');
 const Unidad = require('./Unidad');
 const Expediente = require('./Expediente');
 const Movimiento = require('./Movimiento');
+const LogEliminacion = require('./LogEliminacion');
 
 // Relaciones
 Usuario.belongsTo(Rol, { foreignKey: 'rolId' });
@@ -28,5 +29,6 @@ module.exports = {
   Usuario,
   Unidad,
   Expediente,
-  Movimiento
+  Movimiento,
+  LogEliminacion,
 };
