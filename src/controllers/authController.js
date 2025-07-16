@@ -4,27 +4,21 @@ const { Usuario, Rol } = require("../models");
 
 // Login de usuario por CI
 exports.login = async (req, res) => {
-  console.log("---------------------------------");
-  console.log("Método:", req.method);
-  console.log("Endpoint:", req.originalUrl);
-  console.log("Headers:", req.headers);
-  console.log("Query:", req.query);
-  console.log("Body:", req.body);
-  console.log("---------------------------------");
   try {
     const { usuario, contraseña } = req.body; // usuario = CI
 
     // Buscá el usuario e incluí el rol asociado
     const usuarioEncontrado = await Usuario.findOne({
       where: { ci: usuario },
-      include: {
-        model: Rol,
-        attributes: ["id", "nombre"],
-      },
+      include: { model: Rol }
     });
 
     if (!usuarioEncontrado) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (!usuarioEncontrado.contraseña) {
+      return res.status(500).json({ error: 'Usuario sin contraseña registrada. Contacte al administrador.' });
     }
 
     const contraseñaValida = await bcrypt.compare(

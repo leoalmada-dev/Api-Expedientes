@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require('cors');
 const app = express();
+const morgan = require('morgan');
+
 require("dotenv").config();
 
 app.use(express.json());
@@ -16,6 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(morgan('combined')); // 'dev' es formato compacto y legible para desarrollo
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));

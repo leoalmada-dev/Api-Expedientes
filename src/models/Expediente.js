@@ -9,8 +9,7 @@ const Expediente = sequelize.define(
     numero_documento: { type: DataTypes.STRING, allowNull: false },
     forma_ingreso: { type: DataTypes.STRING, allowNull: false },
     fecha_ingreso: { type: DataTypes.DATEONLY, allowNull: false },
-    procedencia: { type: DataTypes.STRING, allowNull: false },
-    dependencia_origen: { type: DataTypes.STRING },
+    // procedencia: { type: DataTypes.STRING, allowNull: false },  // Si lo usás solo en movimientos, podés quitarlo de acá también
     referencia: { type: DataTypes.STRING },
     detalle: { type: DataTypes.TEXT },
     fecha_registro_sistema: {

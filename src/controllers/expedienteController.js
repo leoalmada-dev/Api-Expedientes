@@ -15,8 +15,6 @@ exports.crearExpediente = async (req, res) => {
       numero_documento,
       forma_ingreso,
       fecha_ingreso,
-      procedencia,
-      dependencia_origen,
       referencia,
       detalle,
       primer_movimiento, // opcional
@@ -29,8 +27,6 @@ exports.crearExpediente = async (req, res) => {
       numero_documento,
       forma_ingreso,
       fecha_ingreso,
-      procedencia,
-      dependencia_origen,
       referencia,
       detalle,
       creadoPorId: usuarioId,
