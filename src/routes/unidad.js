@@ -2,17 +2,16 @@ const express = require('express');
 const router = express.Router();
 const unidadController = require('../controllers/unidadController');
 const verifyToken = require('../middleware/verifyToken');
+const { validarUnidad, chequearErrores } = require('../validations/unidadValidator');
 
-// Listar todas las unidades (público autenticado)
 router.get('/', verifyToken, unidadController.listarUnidades);
 
-// Crear nueva unidad (solo admin/supervisor)
-router.post('/', verifyToken, unidadController.crearUnidad);
+// Crear unidad
+router.post('/', verifyToken, validarUnidad, chequearErrores, unidadController.crearUnidad);
 
-// Actualizar unidad (solo admin/supervisor)
-router.put('/:id', verifyToken, unidadController.actualizarUnidad);
+// Actualizar unidad
+router.put('/:id', verifyToken, validarUnidad, chequearErrores, unidadController.actualizarUnidad);
 
-// Eliminar unidad (solo admin/supervisor)
 router.delete('/:id', verifyToken, unidadController.eliminarUnidad);
 
 module.exports = router;

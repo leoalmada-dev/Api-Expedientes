@@ -7,7 +7,7 @@ const {
   LogEliminacion,
 } = require("../models");
 
-// Crear expediente (con primer movimiento opcional)
+// Crear expediente (con primer movimiento opcional y validado)
 exports.crearExpediente = async (req, res) => {
   try {
     const {
@@ -19,6 +19,22 @@ exports.crearExpediente = async (req, res) => {
       detalle,
       primer_movimiento, // opcional
     } = req.body;
+
+    // Validar primer_movimiento si existe
+    if (primer_movimiento) {
+      // Validá usando el validador de movimientos
+      const mockReq = { body: primer_movimiento };
+      const mockRes = {};
+      await Promise.all(validarCrearMovimiento.map(val => val.run(mockReq, mockRes)));
+      const errors = validationResult(mockReq);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: 'Datos inválidos en primer movimiento',
+          errores: errors.array(),
+        });
+      }
+    }
 
     const usuarioId = req.user.id;
 
