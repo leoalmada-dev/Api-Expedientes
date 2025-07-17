@@ -40,10 +40,14 @@ exports.crearExpediente = async (req, res) => {
       });
     }
 
-    res.status(201).json({ mensaje: "Expediente creado", expediente });
+    res.status(201).json({
+      ok: true,
+      mensaje: "Expediente creado correctamente",
+      datos: expediente,
+    });
   } catch (error) {
     console.error("Error al crear expediente:", error);
-    res.status(500).json({ error: "Error al crear expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al crear expediente", error });
   }
 };
 
@@ -63,9 +67,10 @@ exports.crearMovimiento = async (req, res) => {
 
     const expediente = await Expediente.findByPk(expedienteId);
     if (!expediente || expediente.eliminado)
-      return res
-        .status(404)
-        .json({ error: "Expediente no encontrado o ha sido eliminado" });
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Expediente no encontrado o ha sido eliminado"
+      });
 
     const movimiento = await Movimiento.create({
       expedienteId,
@@ -77,10 +82,14 @@ exports.crearMovimiento = async (req, res) => {
       observaciones,
     });
 
-    res.status(201).json({ mensaje: "Movimiento creado", movimiento });
+    res.status(201).json({
+      ok: true,
+      mensaje: "Movimiento creado correctamente",
+      datos: movimiento,
+    });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
-    res.status(500).json({ error: "Error al crear movimiento" });
+    res.status(500).json({ ok: false, mensaje: "Error al crear movimiento", error });
   }
 };
 
@@ -97,25 +106,29 @@ exports.obtenerExpediente = async (req, res) => {
       ],
     });
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
 
     // Si está eliminado y no es supervisor, no puede verlo
     if (expediente.eliminado && req.user.rol !== "supervisor")
       return res.status(403).json({
-        error: "No tiene permiso para consultar expedientes eliminados",
+        ok: false,
+        mensaje: "No tiene permiso para consultar expedientes eliminados",
       });
 
-    res.json(expediente);
+    res.json({
+      ok: true,
+      mensaje: "Expediente obtenido correctamente",
+      datos: expediente,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Error al obtener expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al obtener expediente", error });
   }
 };
 
 // Listar expedientes con filtros (solo no eliminados)
 exports.listarExpedientes = async (req, res) => {
   try {
-    const { tipo_documento, fecha_desde, fecha_hasta, eliminados } =
-      req.query;
+    const { tipo_documento, fecha_desde, fecha_hasta, eliminados } = req.query;
 
     const where = {};
     // Solo el supervisor puede ver eliminados
@@ -123,14 +136,13 @@ exports.listarExpedientes = async (req, res) => {
       if (req.user.rol !== "supervisor") {
         return res
           .status(403)
-          .json({ error: "No tiene permiso para ver expedientes eliminados" });
+          .json({ ok: false, mensaje: "No tiene permiso para ver expedientes eliminados" });
       }
       where.eliminado = true;
     } else {
       where.eliminado = false;
     }
 
-    // if (unidadId) where.unidadId = unidadId;
     if (tipo_documento) where.tipo_documento = tipo_documento;
     if (fecha_desde && fecha_hasta) {
       where.fecha_ingreso = { [Op.between]: [fecha_desde, fecha_hasta] };
@@ -153,10 +165,14 @@ exports.listarExpedientes = async (req, res) => {
       order: [["fecha_ingreso", "DESC"]],
     });
 
-    res.json(expedientes);
+    res.json({
+      ok: true,
+      mensaje: "Expedientes listados correctamente",
+      datos: expedientes,
+    });
   } catch (error) {
     console.error("Error al listar expedientes:", error);
-    res.status(500).json({ error: "Error al listar expedientes" });
+    res.status(500).json({ ok: false, mensaje: "Error al listar expedientes", error });
   }
 };
 
@@ -168,17 +184,19 @@ exports.actualizarExpediente = async (req, res) => {
 
     const expediente = await Expediente.findByPk(id);
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
     if (expediente.eliminado)
-      return res
-        .status(410)
-        .json({ error: "No se puede modificar un expediente eliminado." });
+      return res.status(410).json({ ok: false, mensaje: "No se puede modificar un expediente eliminado." });
 
     await expediente.update(datos);
-    res.json({ mensaje: "Expediente actualizado", expediente });
+    res.json({
+      ok: true,
+      mensaje: "Expediente actualizado correctamente",
+      datos: expediente,
+    });
   } catch (error) {
     console.error("Error al actualizar expediente:", error);
-    res.status(500).json({ error: "Error al actualizar expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al actualizar expediente", error });
   }
 };
 
@@ -190,11 +208,9 @@ exports.eliminarExpediente = async (req, res) => {
 
     const expediente = await Expediente.findByPk(id);
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
     if (expediente.eliminado)
-      return res
-        .status(400)
-        .json({ error: "El expediente ya estaba eliminado" });
+      return res.status(400).json({ ok: false, mensaje: "El expediente ya estaba eliminado" });
 
     await expediente.update({ eliminado: true });
     await Movimiento.update(
@@ -209,11 +225,12 @@ exports.eliminarExpediente = async (req, res) => {
     });
 
     res.json({
-      mensaje: "Expediente eliminado lógicamente y respaldado en log.",
+      ok: true,
+      mensaje: "Expediente eliminado lógicamente y respaldado en log."
     });
   } catch (error) {
     console.error("Error al eliminar expediente:", error);
-    res.status(500).json({ error: "Error al eliminar expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al eliminar expediente", error });
   }
 };
 
@@ -225,15 +242,11 @@ exports.cerrarExpediente = async (req, res) => {
     const expediente = await Expediente.findByPk(id);
 
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
     if (expediente.eliminado)
-      return res
-        .status(410)
-        .json({ error: "No se puede cerrar un expediente eliminado." });
+      return res.status(410).json({ ok: false, mensaje: "No se puede cerrar un expediente eliminado." });
     if (req.user.rol !== "supervisor")
-      return res
-        .status(403)
-        .json({ error: "Solo el supervisor puede cerrar expedientes" });
+      return res.status(403).json({ ok: false, mensaje: "Solo el supervisor puede cerrar expedientes" });
 
     await expediente.update({
       estado: "cerrado",
@@ -241,9 +254,9 @@ exports.cerrarExpediente = async (req, res) => {
       fecha_cierre: new Date(),
     });
 
-    res.json({ mensaje: "Expediente cerrado" });
+    res.json({ ok: true, mensaje: "Expediente cerrado correctamente" });
   } catch (error) {
-    res.status(500).json({ error: "Error al cerrar expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al cerrar expediente", error });
   }
 };
 
@@ -254,15 +267,11 @@ exports.reabrirExpediente = async (req, res) => {
     const expediente = await Expediente.findByPk(id);
 
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
     if (expediente.eliminado)
-      return res
-        .status(410)
-        .json({ error: "No se puede reabrir un expediente eliminado." });
+      return res.status(410).json({ ok: false, mensaje: "No se puede reabrir un expediente eliminado." });
     if (req.user.rol !== "supervisor")
-      return res
-        .status(403)
-        .json({ error: "Solo el supervisor puede reabrir expedientes" });
+      return res.status(403).json({ ok: false, mensaje: "Solo el supervisor puede reabrir expedientes" });
 
     await expediente.update({
       estado: "abierto",
@@ -270,8 +279,8 @@ exports.reabrirExpediente = async (req, res) => {
       fecha_cierre: null,
     });
 
-    res.json({ mensaje: "Expediente reabierto" });
+    res.json({ ok: true, mensaje: "Expediente reabierto correctamente" });
   } catch (error) {
-    res.status(500).json({ error: "Error al reabrir expediente" });
+    res.status(500).json({ ok: false, mensaje: "Error al reabrir expediente", error });
   }
 };

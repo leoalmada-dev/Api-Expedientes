@@ -17,9 +17,10 @@ exports.crearMovimiento = async (req, res) => {
     // Verifica que el expediente exista y no esté eliminado
     const expediente = await Expediente.findByPk(expedienteId);
     if (!expediente || expediente.eliminado)
-      return res
-        .status(404)
-        .json({ error: "Expediente no encontrado o ha sido eliminado" });
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Expediente no encontrado o ha sido eliminado"
+      });
 
     const movimiento = await Movimiento.create({
       expedienteId,
@@ -31,10 +32,14 @@ exports.crearMovimiento = async (req, res) => {
       observaciones,
     });
 
-    res.status(201).json({ mensaje: "Movimiento creado", movimiento });
+    res.status(201).json({
+      ok: true,
+      mensaje: "Movimiento creado correctamente",
+      datos: movimiento
+    });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
-    res.status(500).json({ error: "Error al crear movimiento" });
+    res.status(500).json({ ok: false, mensaje: "Error al crear movimiento", error });
   }
 };
 
@@ -55,24 +60,23 @@ exports.historialExpediente = async (req, res) => {
       ],
     });
     if (!expediente)
-      return res.status(404).json({ error: "Expediente no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
 
     // Si está eliminado y no es supervisor, no puede verlo
     if (expediente.eliminado && req.user.rol !== "supervisor")
-      return res
-        .status(403)
-        .json({
-          error:
-            "No tiene permiso para consultar el historial de un expediente eliminado",
-        });
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permiso para consultar el historial de un expediente eliminado"
+      });
 
     // Solo el supervisor puede listar movimientos eliminados
     let whereMov = { expedienteId };
     if (eliminados === "true") {
       if (req.user.rol !== "supervisor") {
-        return res
-          .status(403)
-          .json({ error: "No tiene permiso para ver movimientos eliminados" });
+        return res.status(403).json({
+          ok: false,
+          mensaje: "No tiene permiso para ver movimientos eliminados"
+        });
       }
       whereMov.eliminado = true;
     } else {
@@ -93,12 +97,14 @@ exports.historialExpediente = async (req, res) => {
       order: [["fecha_movimiento", "ASC"]],
     });
 
-    res.json({ expediente, movimientos });
+    res.json({
+      ok: true,
+      mensaje: "Historial de movimientos obtenido correctamente",
+      datos: { expediente, movimientos }
+    });
   } catch (error) {
     console.error("Error al obtener historial:", error);
-    res
-      .status(500)
-      .json({ error: "Error al obtener historial de movimientos" });
+    res.status(500).json({ ok: false, mensaje: "Error al obtener historial de movimientos", error });
   }
 };
 
@@ -110,19 +116,22 @@ exports.actualizarMovimiento = async (req, res) => {
 
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ error: "Movimiento no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
     if (movimiento.eliminado && req.user.rol !== "supervisor")
-      return res
-        .status(403)
-        .json({
-          error: "No tiene permiso para editar un movimiento eliminado",
-        });
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permiso para editar un movimiento eliminado"
+      });
 
     await movimiento.update(datos);
-    res.json({ mensaje: "Movimiento actualizado", movimiento });
+    res.json({
+      ok: true,
+      mensaje: "Movimiento actualizado correctamente",
+      datos: movimiento
+    });
   } catch (error) {
     console.error("Error al actualizar movimiento:", error);
-    res.status(500).json({ error: "Error al actualizar movimiento" });
+    res.status(500).json({ ok: false, mensaje: "Error al actualizar movimiento", error });
   }
 };
 
@@ -132,17 +141,15 @@ exports.eliminarMovimiento = async (req, res) => {
     const { id } = req.params;
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ error: "Movimiento no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
     if (movimiento.eliminado)
-      return res
-        .status(400)
-        .json({ error: "El movimiento ya estaba eliminado" });
+      return res.status(400).json({ ok: false, mensaje: "El movimiento ya estaba eliminado" });
 
     await movimiento.update({ eliminado: true });
 
-    res.json({ mensaje: "Movimiento eliminado lógicamente." });
+    res.json({ ok: true, mensaje: "Movimiento eliminado lógicamente" });
   } catch (error) {
     console.error("Error al eliminar movimiento:", error);
-    res.status(500).json({ error: "Error al eliminar movimiento" });
+    res.status(500).json({ ok: false, mensaje: "Error al eliminar movimiento", error });
   }
 };
