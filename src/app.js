@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(morgan('combined')); // 'dev' es formato compacto y legible para desarrollo
+app.use(morgan('dev')); // 'dev' es formato compacto | combined}
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));
