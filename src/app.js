@@ -25,6 +25,8 @@ app.use("/auth", require("./routes/auth"));
 app.use("/expedientes", require("./routes/expediente"));
 app.use("/protected", require("./routes/protected"));
 app.use("/movimientos", require("./routes/movimiento"));
+app.use("/usuarios", require("./routes/usuario"));
+app.use("/unidades", require("./routes/unidad"));
 
 // Importar todos los modelos desde el index de modelos
 const models = require("./models");

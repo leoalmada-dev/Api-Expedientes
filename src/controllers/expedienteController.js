@@ -114,7 +114,7 @@ exports.obtenerExpediente = async (req, res) => {
 // Listar expedientes con filtros (solo no eliminados)
 exports.listarExpedientes = async (req, res) => {
   try {
-    const { unidadId, tipo_documento, fecha_desde, fecha_hasta, eliminados } =
+    const { tipo_documento, fecha_desde, fecha_hasta, eliminados } =
       req.query;
 
     const where = {};
@@ -130,7 +130,7 @@ exports.listarExpedientes = async (req, res) => {
       where.eliminado = false;
     }
 
-    if (unidadId) where.unidadId = unidadId;
+    // if (unidadId) where.unidadId = unidadId;
     if (tipo_documento) where.tipo_documento = tipo_documento;
     if (fecha_desde && fecha_hasta) {
       where.fecha_ingreso = { [Op.between]: [fecha_desde, fecha_hasta] };

@@ -10,8 +10,6 @@ const LogEliminacion = require('./LogEliminacion');
 Usuario.belongsTo(Rol, { foreignKey: 'rolId' });
 Rol.hasMany(Usuario, { foreignKey: 'rolId' });
 
-Unidad.hasMany(Expediente, { foreignKey: 'unidadId' });
-Expediente.belongsTo(Unidad, { foreignKey: 'unidadId' });
 Expediente.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creador' });
 
 Expediente.hasMany(Movimiento, { foreignKey: 'expedienteId' });
@@ -21,7 +19,8 @@ Movimiento.belongsTo(Unidad, { foreignKey: 'unidadDestinoId', as: 'unidadDestino
 Movimiento.belongsTo(Unidad, { foreignKey: 'unidadOrigenId', as: 'unidadOrigen' });
 Movimiento.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
 
-
+Usuario.belongsTo(Unidad, { foreignKey: 'unidadId' });
+Unidad.hasMany(Usuario, { foreignKey: 'unidadId' });
 
 module.exports = {
   sequelize,
