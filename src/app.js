@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(morgan('dev')); // 'dev' es formato compacto | combined}
+app.use(morgan('combined'));
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));
@@ -28,19 +28,13 @@ app.use("/movimientos", require("./routes/movimiento"));
 app.use("/usuarios", require("./routes/usuario"));
 app.use("/unidades", require("./routes/unidad"));
 
-// Importar todos los modelos desde el index de modelos
+// Importar modelos y sincronizar BD
 const models = require("./models");
 const { sequelize } = models;
 
-const PORT = process.env.PORT || 3000;
-
+// Solo sincronizamos la base acá (sin levantar el servidor)
 sequelize
-  .sync({ alter: true }) // Cambia a { force: true } si querés limpiar TODO
-  .then(() => {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Servidor corriendo en el puerto ${PORT}`);
-    });
-  })
+  .sync({ alter: true })
   .catch((error) => {
     console.error("Error sincronizando base de datos:", error);
   });

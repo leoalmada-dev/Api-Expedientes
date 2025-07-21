@@ -237,7 +237,7 @@ DB_NAME=expedientes_db
 
 ```bash
 npm install
-npm start | node src/app.js
+npm start | node src/server.js
 ```
 
 ---
