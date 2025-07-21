@@ -7,6 +7,10 @@ const {
   LogEliminacion,
 } = require("../models");
 
+// ⚠️ Importa los validadores y validationResult para usar en el controller
+const { validarCrearMovimiento } = require('../validations/movimientoValidator');
+const { validationResult } = require('express-validator');
+
 // Crear expediente (con primer movimiento opcional y validado)
 exports.crearExpediente = async (req, res) => {
   try {
@@ -22,7 +26,6 @@ exports.crearExpediente = async (req, res) => {
 
     // Validar primer_movimiento si existe
     if (primer_movimiento) {
-      // Validá usando el validador de movimientos
       const mockReq = { body: primer_movimiento };
       const mockRes = {};
       await Promise.all(validarCrearMovimiento.map(val => val.run(mockReq, mockRes)));
@@ -86,6 +89,13 @@ exports.crearMovimiento = async (req, res) => {
       return res.status(404).json({
         ok: false,
         mensaje: "Expediente no encontrado o ha sido eliminado"
+      });
+
+    // 🚦 Controlar que NO se puedan registrar movimientos en expedientes cerrados
+    if (expediente.estado === "cerrado")
+      return res.status(409).json({
+        ok: false,
+        mensaje: "No se pueden registrar movimientos en un expediente cerrado"
       });
 
     const movimiento = await Movimiento.create({
