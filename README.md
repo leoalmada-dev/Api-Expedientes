@@ -79,10 +79,13 @@ src/
 }
 ```
 
+
 ### **Usuarios (`/usuarios`)**
 
-* GET `/usuarios`
-* POST `/usuarios`
+* GET `/usuarios` (admin, supervisor)
+* POST `/usuarios` (admin, supervisor)
+* PUT `/usuarios/:id` (admin, supervisor)
+* DELETE `/usuarios/:id` (admin, supervisor)
 
 ```json
 {
@@ -95,15 +98,52 @@ src/
 }
 ```
 
-### **Expedientes (`/expedientes`)**
 
-* GET `/expedientes`
-* POST `/expedientes`
+### **Unidades (`/unidades`)**
+
+* GET `/unidades` (todos los roles)
+* POST `/unidades` (admin, supervisor)
+* PUT `/unidades/:id` (admin, supervisor)
+* DELETE `/unidades/:id` (admin, supervisor)
 
 ```json
 {
+  "nombre": "Nueva Unidad"
+}
+```
+
+
+### **Expedientes (`/expedientes`)**
+
+* POST `/expedientes` crea un expediente y, en la misma petición, crea su primer movimiento de entrada (Ejemplo mas abajo)
+* GET `/expedientes` (todos los roles)
+Devuelve todos los expedientes si no le aplicas filtros.
+Ejemplo con filtros: `/expedientes?tipo_documento=oficio&fecha_desde=2025-07-01&fecha_hasta=2025-07-31`
+(Se pueden utilizar uno o mas filtros)
+
+│ Parámetros para el FILTRO:
+│ - tipo_documento (string): "oficio", "apia", "memo", "fisico"
+│ - fecha_desde (YYYY-MM-DD)
+│ - fecha_hasta (YYYY-MM-DD)
+│ - estado (string): "cerrado", "abierto" (Una vez cerrado no se pueden asignar mas movimientos ni editar movimientos del mismo, solo se puede reabrir por el supervisor y esto qeda registrado)
+│ - eliminados (true): Solo para rol supervisor, para listar expedientes eliminados
+│ Ejemplo eliminados: GET `/expedientes?eliminados=true`
+│ Si no se incluye eliminados solo se muestran los expedientes activos (no eliminados).
+
+* GET	`/expedientes/:id`	Obtener expediente por ID
+* PUT	`/expedientes/:id`	Actualizar expediente	(Supervisor, admin)
+* DELETE	`/expedientes/:id`	Eliminar expediente (lógico)	(Supervisor, admin)
+* POST	`/expedientes/:id/cerrar`	Cerrar expediente	(Supervisor)
+* POST	`/expedientes/:id/reabrir`	Reabrir expediente	(Supervisor)
+* POST	`/expedientes/:expedienteId/movimientos`	Crear movimiento para expediente
+(Ejemplo mas abajo en Seccion Movimientos)
+
+Ejemplo para crear expediente (con movimiento):
+POST `/expedientes`
+```json
+{
   "tipo_documento": "oficio",
-  "numero_documento": "OFICIO N.º 100/2025",
+  "numero_documento": "N.º 100/2025",
   "forma_ingreso": "correo",
   "fecha_ingreso": "2025-07-16",
   "referencia": "Solicitud",
@@ -117,10 +157,26 @@ src/
 }
 ```
 
+Ejemplo para actualizar expediente:
+(podes enviar solo la variable q vas a actualizar)
+
+* PUT /expedientes/1
+```json
+{
+  "detalle": "Nuevo detalle del expediente"
+}
+```
+
+
 ### **Movimientos (`/expedientes/:expedienteId/movimientos`)**
 
-* POST
+* PUT	`/movimientos/:id`	Actualizar movimiento	(Supervisor, admin)
+* DELETE	`/movimientos/:id`	Eliminar movimiento (lógico)	(Supervisor, admin)
+* GET	`/movimientos/:expedienteId/historial`	Obtener historial completo de un expediente (todos los roles)
+* POST	`/expedientes/:expedienteId/movimientos`	Crear movimiento para expediente (todos menos visualizador)
 
+Ejemplo para crear movimiento:
+POST /expedientes/1/movimientos
 ```json
 {
   "tipo": "salida",
@@ -130,6 +186,17 @@ src/
   "observaciones": "Envío a Jurídica"
 }
 ```
+
+Ejemplo para actualizar movimiento:
+(podes enviar solo la variable q vas a actualizar)
+
+PUT /movimientos/5
+```json
+{
+  "observaciones": "Observaciones editadas"
+}
+```
+
 
 ---
 

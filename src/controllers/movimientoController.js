@@ -1,6 +1,6 @@
 const { Movimiento, Expediente, Unidad, Usuario } = require("../models");
 
-// Crear un nuevo movimiento para un expediente existente
+// Crear movimiento para un expediente existente
 exports.crearMovimiento = async (req, res) => {
   try {
     const { expedienteId } = req.params;
@@ -14,7 +14,7 @@ exports.crearMovimiento = async (req, res) => {
 
     const usuarioId = req.user.id;
 
-    // Verifica que el expediente exista y no esté eliminado
+    // Busca el expediente y controla eliminado/cerrado
     const expediente = await Expediente.findByPk(expedienteId);
     if (!expediente || expediente.eliminado)
       return res.status(404).json({
@@ -22,6 +22,14 @@ exports.crearMovimiento = async (req, res) => {
         mensaje: "Expediente no encontrado o ha sido eliminado"
       });
 
+    // 🚫 NO permitir movimientos si está cerrado
+    if (expediente.estado === "cerrado")
+      return res.status(409).json({
+        ok: false,
+        mensaje: "No se pueden registrar movimientos en un expediente cerrado"
+      });
+
+    // ... (validación y creación del movimiento como antes)
     const movimiento = await Movimiento.create({
       expedienteId,
       tipo,
@@ -35,7 +43,7 @@ exports.crearMovimiento = async (req, res) => {
     res.status(201).json({
       ok: true,
       mensaje: "Movimiento creado correctamente",
-      datos: movimiento
+      datos: movimiento,
     });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
@@ -116,19 +124,25 @@ exports.actualizarMovimiento = async (req, res) => {
 
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
-    if (movimiento.eliminado && req.user.rol !== "supervisor")
-      return res.status(403).json({
+      return res.status(404).json({ error: "Movimiento no encontrado" });
+
+    // 🚫 Controlar si el expediente está cerrado
+    const expediente = await Expediente.findByPk(movimiento.expedienteId);
+    if (expediente && expediente.estado === "cerrado")
+      return res.status(409).json({
         ok: false,
-        mensaje: "No tiene permiso para editar un movimiento eliminado"
+        mensaje: "No se puede editar movimientos de un expediente cerrado"
       });
 
+    if (movimiento.eliminado && req.user.rol !== "supervisor")
+      return res
+        .status(403)
+        .json({
+          error: "No tiene permiso para editar un movimiento eliminado",
+        });
+
     await movimiento.update(datos);
-    res.json({
-      ok: true,
-      mensaje: "Movimiento actualizado correctamente",
-      datos: movimiento
-    });
+    res.json({ ok: true, mensaje: "Movimiento actualizado", movimiento });
   } catch (error) {
     console.error("Error al actualizar movimiento:", error);
     res.status(500).json({ ok: false, mensaje: "Error al actualizar movimiento", error });
@@ -141,15 +155,27 @@ exports.eliminarMovimiento = async (req, res) => {
     const { id } = req.params;
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
+      return res.status(404).json({ error: "Movimiento no encontrado" });
+
+    // 🚫 Controlar si el expediente está cerrado
+    const expediente = await Expediente.findByPk(movimiento.expedienteId);
+    if (expediente && expediente.estado === "cerrado")
+      return res.status(409).json({
+        ok: false,
+        mensaje: "No se puede eliminar movimientos de un expediente cerrado"
+      });
+
     if (movimiento.eliminado)
-      return res.status(400).json({ ok: false, mensaje: "El movimiento ya estaba eliminado" });
+      return res
+        .status(400)
+        .json({ ok: false, error: "El movimiento ya estaba eliminado" });
 
     await movimiento.update({ eliminado: true });
 
-    res.json({ ok: true, mensaje: "Movimiento eliminado lógicamente" });
+    res.json({ ok: true, mensaje: "Movimiento eliminado lógicamente." });
   } catch (error) {
     console.error("Error al eliminar movimiento:", error);
     res.status(500).json({ ok: false, mensaje: "Error al eliminar movimiento", error });
   }
 };
+
