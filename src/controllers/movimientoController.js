@@ -124,25 +124,19 @@ exports.actualizarMovimiento = async (req, res) => {
 
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ error: "Movimiento no encontrado" });
-
-    // 🚫 Controlar si el expediente está cerrado
-    const expediente = await Expediente.findByPk(movimiento.expedienteId);
-    if (expediente && expediente.estado === "cerrado")
-      return res.status(409).json({
+      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
+    if (movimiento.eliminado && req.user.rol !== "supervisor")
+      return res.status(403).json({
         ok: false,
-        mensaje: "No se puede editar movimientos de un expediente cerrado"
+        mensaje: "No tiene permiso para editar un movimiento eliminado",
       });
 
-    if (movimiento.eliminado && req.user.rol !== "supervisor")
-      return res
-        .status(403)
-        .json({
-          error: "No tiene permiso para editar un movimiento eliminado",
-        });
-
     await movimiento.update(datos);
-    res.json({ ok: true, mensaje: "Movimiento actualizado", movimiento });
+    res.json({
+      ok: true,
+      mensaje: "Movimiento actualizado correctamente",
+      datos: movimiento, // <-- importante!
+    });
   } catch (error) {
     console.error("Error al actualizar movimiento:", error);
     res.status(500).json({ ok: false, mensaje: "Error al actualizar movimiento", error });

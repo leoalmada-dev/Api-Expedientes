@@ -34,7 +34,7 @@ const { sequelize } = models;
 
 // Solo sincronizamos la base acá (sin levantar el servidor)
 sequelize
-  .sync() // { alter: true }
+  .sync() // { alter: true } , { force: true }
   .catch((error) => {
     console.error("Error sincronizando base de datos:", error);
   });
