@@ -1,6 +1,8 @@
 const request = require("supertest");
 const app = require("../app");
-let adminToken, expedienteId, movimientoId;
+let adminToken;
+const expedientesCreados = [];
+const movimientosCreados = [];
 
 beforeAll(async () => {
   // Login admin
@@ -9,38 +11,62 @@ beforeAll(async () => {
     contraseña: "admin123",
   });
   adminToken = adminRes.body.token;
+});
 
-  // Crea un expediente para pruebas de movimientos
-  const resExp = await request(app)
-    .post("/expedientes")
-    .set("Authorization", `Bearer ${adminToken}`)
-    .send({
-      tipo_documento: "memo",
-      numero_documento: "MEMO 333/2025",
-      forma_ingreso: "apia",
-      fecha_ingreso: "2025-07-21",
-      referencia: "Para movs",
-      detalle: "Movimientos test",
-    });
-  expedienteId = resExp.body.datos.id;
+afterAll(async () => {
+  // Borra movimientos de test
+  for (const id of movimientosCreados) {
+    try {
+      await request(app)
+        .delete(`/movimientos/${id}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+    } catch (e) {}
+  }
+  // Borra expedientes de test
+  for (const id of expedientesCreados) {
+    try {
+      await request(app)
+        .delete(`/expedientes/${id}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+    } catch (e) {}
+  }
 });
 
 describe("Movimientos", () => {
+  let expedienteId, movimientoId;
+
+  beforeAll(async () => {
+    // Crea expediente para los movimientos de test
+    const res = await request(app)
+      .post("/expedientes")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "oficio",
+        numero_documento: "MOV-TEST-001",
+        forma_ingreso: "correo",
+        fecha_ingreso: "2025-07-22",
+        referencia: "Test movs",
+        detalle: "Pruebas movimientos",
+      });
+    expedienteId = res.body.datos.id;
+    expedientesCreados.push(expedienteId);
+  });
+
   it("Crea un movimiento de entrada", async () => {
     const res = await request(app)
       .post(`/expedientes/${expedienteId}/movimientos`)
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
         tipo: "entrada",
-        fecha_movimiento: "2025-07-21",
+        fecha_movimiento: "2025-07-22",
         unidadDestinoId: 1,
-        observaciones: "Primer movimiento",
+        observaciones: "Movimiento de prueba",
       });
     expect(res.statusCode).toBe(201);
     expect(res.body.ok).toBe(true);
     expect(res.body.datos.tipo).toBe("entrada");
-    // Guardamos el ID para las pruebas siguientes
     movimientoId = res.body.datos.id;
+    movimientosCreados.push(movimientoId);
   });
 
   it("Actualiza un movimiento", async () => {
@@ -76,7 +102,7 @@ describe("Movimientos", () => {
   });
 
   it("NO permite crear movimiento en expediente eliminado", async () => {
-    // Elimina el expediente (si no fue eliminado antes)
+    // Elimina el expediente
     await request(app)
       .delete(`/expedientes/${expedienteId}`)
       .set("Authorization", `Bearer ${adminToken}`);
@@ -96,38 +122,41 @@ describe("Movimientos", () => {
   });
 
   it("Obtiene historial de movimientos de un expediente", async () => {
-    // Creamos un expediente y un movimiento para este test para asegurar que exista
+    // Crea expediente y un movimiento nuevo
     const resExp = await request(app)
       .post("/expedientes")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
-        tipo_documento: "oficio",
-        numero_documento: "HIST-002",
-        forma_ingreso: "correo",
-        fecha_ingreso: "2025-07-22",
-        referencia: "Test historial",
-        detalle: "Probando historial",
+        tipo_documento: "fisico",
+        numero_documento: "MOV-TEST-002",
+        forma_ingreso: "papel",
+        fecha_ingreso: "2025-07-23",
+        referencia: "Para historial",
+        detalle: "Historial test",
       });
-    const expId = resExp.body.datos.id;
+    const nuevoExpId = resExp.body.datos.id;
+    expedientesCreados.push(nuevoExpId);
 
-    await request(app)
-      .post(`/expedientes/${expId}/movimientos`)
+    const resMov = await request(app)
+      .post(`/expedientes/${nuevoExpId}/movimientos`)
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
         tipo: "entrada",
-        fecha_movimiento: "2025-07-22",
+        fecha_movimiento: "2025-07-23",
         unidadDestinoId: 1,
-        observaciones: "Mov. inicial para historial",
+        observaciones: "Para historial",
       });
+    const nuevoMovId = resMov.body.datos.id;
+    movimientosCreados.push(nuevoMovId);
 
     const res = await request(app)
-      .get(`/movimientos/${expId}/historial`)
+      .get(`/movimientos/${nuevoExpId}/historial`)
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.datos).toBeDefined();
     expect(res.body.datos.movimientos.length).toBeGreaterThanOrEqual(1);
-    expect(res.body.datos.movimientos[0].expedienteId).toBe(expId);
+    expect(res.body.datos.movimientos[0].expedienteId).toBe(nuevoExpId);
   });
 });

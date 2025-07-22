@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../app');
 let adminToken;
 let supervisorToken;
+const expedientesCreados = []; // IDs de expedientes creados para borrar al final
 
 beforeAll(async () => {
   // Login admin
@@ -19,6 +20,19 @@ beforeAll(async () => {
   supervisorToken = supRes.body.token;
 });
 
+afterAll(async () => {
+  // Borra todos los expedientes creados en este ciclo (que no hayan sido eliminados durante los tests)
+  for (const id of expedientesCreados) {
+    try {
+      await request(app)
+        .delete(`/expedientes/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+    } catch (e) {
+      // Si ya estaba eliminado, ignorar error
+    }
+  }
+});
+
 describe('Expedientes', () => {
   it('Crea un expediente con su primer movimiento', async () => {
     const res = await request(app)
@@ -26,7 +40,7 @@ describe('Expedientes', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         tipo_documento: "oficio",
-        numero_documento: "OFICIO N.º 200/2025",
+        numero_documento: "TEST-EXP-200/2025",
         forma_ingreso: "correo",
         fecha_ingreso: "2025-07-16",
         referencia: "Test expediente",
@@ -42,6 +56,7 @@ describe('Expedientes', () => {
     expect(res.body.ok).toBe(true);
     expect(res.body.datos).toBeDefined();
     expect(res.body.datos.tipo_documento).toBe("oficio");
+    expedientesCreados.push(res.body.datos.id);
   });
 
   it('Crea un expediente sin movimiento', async () => {
@@ -50,7 +65,7 @@ describe('Expedientes', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         tipo_documento: "memo",
-        numero_documento: "MEMO 1234/2025",
+        numero_documento: "TEST-EXP-1234/2025",
         forma_ingreso: "apia",
         fecha_ingreso: "2025-07-17",
         referencia: "Solo expediente test",
@@ -58,6 +73,76 @@ describe('Expedientes', () => {
       });
     expect(res.statusCode).toBe(201);
     expect(res.body.ok).toBe(true);
+    expedientesCreados.push(res.body.datos.id);
+  });
+
+  it('Crea un movimiento en expediente abierto', async () => {
+    // Crea expediente primero
+    const expediente = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "fisico",
+        numero_documento: "TEST-EXP-321/2025",
+        forma_ingreso: "papel",
+        fecha_ingreso: "2025-07-17",
+        referencia: "test mov abierto",
+        detalle: "Expediente para movimiento"
+      });
+    const expId = expediente.body.datos.id;
+    expedientesCreados.push(expId);
+
+    // Crea movimiento
+    const res = await request(app)
+      .post(`/expedientes/${expId}/movimientos`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo: "salida",
+        fecha_movimiento: "2025-07-18",
+        unidadDestinoId: 2,
+        unidadOrigenId: 1,
+        observaciones: "Salida test"
+      });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.datos.tipo).toBe("salida");
+  });
+
+  it('NO permite crear movimiento en expediente cerrado', async () => {
+    // Crea expediente como admin
+    const expediente = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "memo",
+        numero_documento: "TEST-EXP-999/2025",
+        forma_ingreso: "apia",
+        fecha_ingreso: "2025-07-19",
+        referencia: "Para cierre",
+        detalle: "Se va a cerrar"
+      });
+    const expId = expediente.body.datos.id;
+    expedientesCreados.push(expId);
+
+    // Cierra expediente como supervisor
+    await request(app)
+      .post(`/expedientes/${expId}/cerrar`)
+      .set('Authorization', `Bearer ${supervisorToken}`);
+
+    // Intenta crear movimiento como admin
+    const res = await request(app)
+      .post(`/expedientes/${expId}/movimientos`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo: "entrada",
+        fecha_movimiento: "2025-07-20",
+        unidadDestinoId: 1,
+        observaciones: "Intento después de cierre"
+      });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.mensaje).toMatch(/expediente cerrado/i);
   });
 
   it('NO crea expediente si faltan campos obligatorios', async () => {
@@ -84,13 +169,14 @@ describe('Expedientes - Update y Delete', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         tipo_documento: "oficio",
-        numero_documento: "OFICIO 111/2025",
+        numero_documento: "TEST-EXP-111/2025",
         forma_ingreso: "correo",
         fecha_ingreso: "2025-07-21",
         referencia: "Update test",
         detalle: "Para actualizar"
       });
     expedienteId = res.body.datos.id;
+    expedientesCreados.push(expedienteId);
   });
 
   it('Actualiza expediente correctamente', async () => {
@@ -129,13 +215,14 @@ it('Elimina expediente lógicamente y loguea la acción', async () => {
     .set('Authorization', `Bearer ${adminToken}`)
     .send({
       tipo_documento: "memo",
-      numero_documento: "MEMO 555/2025",
+      numero_documento: "TEST-EXP-555/2025",
       forma_ingreso: "apia",
       fecha_ingreso: "2025-07-21",
       referencia: "Para borrar",
       detalle: "Eliminación lógica"
     });
   const expId = res.body.datos.id;
+  expedientesCreados.push(expId);
 
   // Elimina el expediente
   const delRes = await request(app)
