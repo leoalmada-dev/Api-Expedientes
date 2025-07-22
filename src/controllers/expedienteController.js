@@ -186,7 +186,7 @@ exports.listarExpedientes = async (req, res) => {
           as: "creador",
           attributes: ["id", "nombre", "correo"],
         },
-        { model: Unidad },
+        // { model: Unidad },
       ],
       order: [["fecha_ingreso", "DESC"]],
     });
