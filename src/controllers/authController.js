@@ -10,20 +10,21 @@ exports.login = async (req, res) => {
     // Buscar el usuario e incluir el rol asociado
     const usuarioEncontrado = await Usuario.findOne({
       where: { ci: usuario },
-      include: { model: Rol }
+      include: { model: Rol },
     });
 
     if (!usuarioEncontrado) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Usuario no encontrado"
+        mensaje: "Usuario no encontrado",
       });
     }
 
     if (!usuarioEncontrado.contraseña) {
       return res.status(500).json({
         ok: false,
-        mensaje: "Usuario sin contraseña registrada. Contacte al administrador."
+        mensaje:
+          "Usuario sin contraseña registrada. Contacte al administrador.",
       });
     }
 
@@ -31,10 +32,11 @@ exports.login = async (req, res) => {
       contraseña,
       usuarioEncontrado.contraseña
     );
+
     if (!contraseñaValida) {
       return res.status(401).json({
         ok: false,
-        mensaje: "Contraseña incorrecta"
+        mensaje: "Contraseña incorrecta",
       });
     }
 
@@ -64,6 +66,8 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error("Error en login:", error);
-    res.status(500).json({ ok: false, mensaje: "Error interno en login", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error interno en login", error });
   }
 };

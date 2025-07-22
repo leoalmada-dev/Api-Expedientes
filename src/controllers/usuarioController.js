@@ -9,14 +9,20 @@ exports.listarUsuarios = async (req, res) => {
     const usuarios = await Usuario.findAll({
       attributes: { exclude: ["contraseña"] },
       include: [
-        { model: Rol, attributes: ["nombre"] },
-        { model: Unidad, attributes: ["nombre"] },
+        { model: Rol, attributes: ["id", "nombre"] },
+        { model: Unidad, attributes: ["id", "nombre"] },
       ],
     });
-    res.json({ ok: true, mensaje: "Usuarios listados correctamente", datos: usuarios });
+    res.json({
+      ok: true,
+      mensaje: "Usuarios listados correctamente",
+      datos: usuarios,
+    });
   } catch (error) {
     console.error("Error al listar usuarios:", error);
-    res.status(500).json({ ok: false, mensaje: "Error al listar usuarios", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al listar usuarios", error });
   }
 };
 
@@ -28,7 +34,9 @@ exports.crearUsuario = async (req, res) => {
     const { nombre, ci, correo, contraseña, rolId, unidadId } = req.body;
     const existe = await Usuario.findOne({ where: { ci } });
     if (existe)
-      return res.status(409).json({ ok: false, mensaje: "El CI ya está registrado" });
+      return res
+        .status(409)
+        .json({ ok: false, mensaje: "El CI ya está registrado" });
 
     const hashedPassword = await bcrypt.hash(contraseña, 10);
     const nuevoUsuario = await Usuario.create({
@@ -45,7 +53,9 @@ exports.crearUsuario = async (req, res) => {
       datos: { ...nuevoUsuario.toJSON(), contraseña: undefined },
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: "Error al crear usuario", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al crear usuario", error });
   }
 };
 
@@ -58,7 +68,9 @@ exports.actualizarUsuario = async (req, res) => {
     const { nombre, ci, correo, contraseña, rolId, unidadId } = req.body;
     const usuario = await Usuario.findByPk(id);
     if (!usuario)
-      return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+      return res
+        .status(404)
+        .json({ ok: false, mensaje: "Usuario no encontrado" });
 
     let updateData = { nombre, ci, correo, rolId, unidadId };
     if (contraseña) updateData.contraseña = await bcrypt.hash(contraseña, 10);
@@ -70,7 +82,9 @@ exports.actualizarUsuario = async (req, res) => {
       datos: { ...usuario.toJSON(), contraseña: undefined },
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: "Error al actualizar usuario", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al actualizar usuario", error });
   }
 };
 
@@ -82,11 +96,15 @@ exports.eliminarUsuario = async (req, res) => {
     const { id } = req.params;
     const usuario = await Usuario.findByPk(id);
     if (!usuario)
-      return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+      return res
+        .status(404)
+        .json({ ok: false, mensaje: "Usuario no encontrado" });
 
     await usuario.destroy();
     res.json({ ok: true, mensaje: "Usuario eliminado correctamente" });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: "Error al eliminar usuario", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al eliminar usuario", error });
   }
 };
