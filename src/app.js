@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(morgan('combined'));
+app.use(morgan('dev')); //dev o combined
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));

@@ -2,7 +2,10 @@ const request = require('supertest');
 const app = require('../app');
 let adminToken;
 let supervisorToken;
+let operadorToken;
+let visualizadorToken;
 const expedientesCreados = []; // IDs de expedientes creados para borrar al final
+
 
 beforeAll(async () => {
   // Login admin
@@ -18,6 +21,20 @@ beforeAll(async () => {
     contraseña: 'supervisor123'
   });
   supervisorToken = supRes.body.token;
+
+  // Login operador
+  const opRes = await request(app).post('/auth/login').send({
+    usuario: '34567890',
+    contraseña: 'operador123'
+  });
+  operadorToken = opRes.body.token;
+
+  // Login visualizador
+  const visRes = await request(app).post('/auth/login').send({
+    usuario: '45678901',
+    contraseña: 'visual123'
+  });
+  visualizadorToken = visRes.body.token;
 });
 
 afterAll(async () => {
@@ -251,5 +268,97 @@ it('Filtra expedientes por tipo_documento', async () => {
   // Todos los resultados deben tener el tipo_documento = 'oficio'
   res.body.datos.forEach(e => {
     expect(e.tipo_documento).toBe("oficio");
+  });
+});
+
+describe('Expedientes - permisos', () => {
+  it('Operador puede crear expediente', async () => {
+    const res = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${operadorToken}`)
+      .send({
+        tipo_documento: "memo",
+        numero_documento: "TEST-EXP-OPERADOR",
+        forma_ingreso: "apia",
+        fecha_ingreso: "2025-07-25",
+        referencia: "Operador crea",
+        detalle: "Expediente operador"
+      });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expedientesCreados.push(res.body.datos.id);
+  });
+
+  it('Visualizador NO puede crear expediente', async () => {
+    const res = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${visualizadorToken}`)
+      .send({
+        tipo_documento: "memo",
+        numero_documento: "TEST-EXP-VISUALIZADOR",
+        forma_ingreso: "apia",
+        fecha_ingreso: "2025-07-25",
+        referencia: "Visualizador intenta",
+        detalle: "No debería poder"
+      });
+    // Puede devolver 403 (lo más estricto) o 401 según tu backend
+    expect([401, 403]).toContain(res.statusCode);
+    expect(res.body.ok).toBe(false);
+  });
+
+  it('Visualizador NO puede actualizar ni eliminar expedientes', async () => {
+    // Creamos primero un expediente como admin para este test
+    const resExp = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "oficio",
+        numero_documento: "TEST-EXP-VISUAL-EDIT",
+        forma_ingreso: "correo",
+        fecha_ingreso: "2025-07-26",
+        referencia: "Para test de permisos",
+        detalle: "No editable por visualizador"
+      });
+    const expId = resExp.body.datos.id;
+    expedientesCreados.push(expId);
+
+    // Intentar update
+    const updateRes = await request(app)
+      .put(`/expedientes/${expId}`)
+      .set('Authorization', `Bearer ${visualizadorToken}`)
+      .send({ referencia: "No debería" });
+    expect([401, 403]).toContain(updateRes.statusCode);
+    expect(updateRes.body.ok).toBe(false);
+
+    // Intentar delete
+    const delRes = await request(app)
+      .delete(`/expedientes/${expId}`)
+      .set('Authorization', `Bearer ${visualizadorToken}`);
+    expect([401, 403]).toContain(delRes.statusCode);
+    expect(delRes.body.ok).toBe(false);
+  });
+
+  it('Operador NO puede eliminar expediente', async () => {
+    // Creamos primero un expediente como admin para este test
+    const resExp = await request(app)
+      .post('/expedientes')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "fisico",
+        numero_documento: "TEST-EXP-OPER-DELETE",
+        forma_ingreso: "papel",
+        fecha_ingreso: "2025-07-27",
+        referencia: "Para delete operador",
+        detalle: "No debería eliminar"
+      });
+    const expId = resExp.body.datos.id;
+    expedientesCreados.push(expId);
+
+    // Intentar delete como operador
+    const delRes = await request(app)
+      .delete(`/expedientes/${expId}`)
+      .set('Authorization', `Bearer ${operadorToken}`);
+    expect([401, 403]).toContain(delRes.statusCode);
+    expect(delRes.body.ok).toBe(false);
   });
 });

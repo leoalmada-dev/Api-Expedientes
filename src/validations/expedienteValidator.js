@@ -18,12 +18,12 @@ exports.validarCrearExpediente = [
     .isISO8601().withMessage('Formato de fecha inválido (usar YYYY-MM-DD)'),
   body('referencia')
     .optional()
-    .isLength({ max: 100 })
-    .withMessage('La referencia debe tener hasta 100 caracteres'),
+    .isLength({ max: 32 })
+    .withMessage('La referencia debe tener hasta 32 caracteres'),
   body('detalle')
     .optional()
-    .isLength({ max: 500 })
-    .withMessage('El detalle debe tener hasta 500 caracteres'),
+    .isLength({ max: 255 })
+    .withMessage('El detalle debe tener hasta 255 caracteres'),
 ];
 
 // Validaciones para actualizar expediente (todos opcionales)

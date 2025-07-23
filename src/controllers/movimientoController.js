@@ -3,6 +3,14 @@ const { Movimiento, Expediente, Unidad, Usuario } = require("../models");
 // Crear movimiento para un expediente existente
 exports.crearMovimiento = async (req, res) => {
   try {
+    // Solo admin, supervisor y operador pueden crear movimientos
+    if (!["admin", "supervisor", "operador"].includes(req.user.rol)) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permiso para crear movimientos",
+      });
+    }
+
     const { expedienteId } = req.params;
     const {
       tipo,
@@ -29,7 +37,6 @@ exports.crearMovimiento = async (req, res) => {
         mensaje: "No se pueden registrar movimientos en un expediente cerrado"
       });
 
-    // ... (validación y creación del movimiento como antes)
     const movimiento = await Movimiento.create({
       expedienteId,
       tipo,
@@ -119,6 +126,14 @@ exports.historialExpediente = async (req, res) => {
 // Actualizar movimiento
 exports.actualizarMovimiento = async (req, res) => {
   try {
+    // Solo admin y supervisor pueden actualizar movimientos
+    if (!["admin", "supervisor"].includes(req.user.rol)) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permiso para actualizar movimientos",
+      });
+    }
+
     const { id } = req.params;
     const datos = req.body;
 
@@ -135,7 +150,7 @@ exports.actualizarMovimiento = async (req, res) => {
     res.json({
       ok: true,
       mensaje: "Movimiento actualizado correctamente",
-      datos: movimiento, // <-- importante!
+      datos: movimiento,
     });
   } catch (error) {
     console.error("Error al actualizar movimiento:", error);
@@ -146,10 +161,18 @@ exports.actualizarMovimiento = async (req, res) => {
 // Eliminación lógica de movimiento
 exports.eliminarMovimiento = async (req, res) => {
   try {
+    // Solo admin y supervisor pueden eliminar movimientos
+    if (!["admin", "supervisor"].includes(req.user.rol)) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permiso para eliminar movimientos",
+      });
+    }
+
     const { id } = req.params;
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ error: "Movimiento no encontrado" });
+      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
 
     // 🚫 Controlar si el expediente está cerrado
     const expediente = await Expediente.findByPk(movimiento.expedienteId);
@@ -162,7 +185,7 @@ exports.eliminarMovimiento = async (req, res) => {
     if (movimiento.eliminado)
       return res
         .status(400)
-        .json({ ok: false, error: "El movimiento ya estaba eliminado" });
+        .json({ ok: false, mensaje: "El movimiento ya estaba eliminado" });
 
     await movimiento.update({ eliminado: true });
 
@@ -172,4 +195,3 @@ exports.eliminarMovimiento = async (req, res) => {
     res.status(500).json({ ok: false, mensaje: "Error al eliminar movimiento", error });
   }
 };
-
