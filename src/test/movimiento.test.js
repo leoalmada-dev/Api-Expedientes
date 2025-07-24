@@ -208,4 +208,71 @@ describe("Movimientos - CRUD y permisos", () => {
     expect(res.statusCode).toBe(403);
     expect(res.body.ok).toBe(false);
   });
+
+  it("Crea movimiento hacia unidad externa y filtra por tipo_destino", async () => {
+    // 1. Crear unidad externa
+    const unidadRes = await request(app)
+      .post("/unidades")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ nombre: "Juzgado TEST", tipo: "externo" });
+    const unidadExternaId = unidadRes.body.datos.id;
+
+    // 2. Crear expediente
+    const expRes = await request(app)
+      .post("/expedientes")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        tipo_documento: "fisico",
+        numero_documento: "EXP-EXT-001",
+        forma_ingreso: "papel",
+        fecha_ingreso: "2025-07-30",
+        referencia: "Para test externo",
+        detalle: "Movimiento externo test",
+      });
+    const expedienteId = expRes.body.datos.id;
+
+    // 3. Crear movimiento con destino externo
+    const movRes = await request(app)
+      .post(`/expedientes/${expedienteId}/movimientos`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        tipo: "salida",
+        fecha_movimiento: "2025-07-30",
+        unidadDestinoId: unidadExternaId,
+        observaciones: "Salida a juzgado test",
+      });
+    expect(movRes.statusCode).toBe(201);
+    expect(movRes.body.ok).toBe(true);
+
+    // 4. Obtener historial sin filtro (debe incluirlo)
+    const histRes = await request(app)
+      .get(`/movimientos/${expedienteId}/historial`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    const movimientos = histRes.body.datos.movimientos;
+    expect(movimientos.length).toBeGreaterThan(0);
+    expect(movimientos[0].unidadDestino.tipo).toBe("externo");
+
+    // 5. Obtener historial con filtro tipo_destino=externo
+    const filtroExt = await request(app)
+      .get(`/movimientos/${expedienteId}/historial?tipo_destino=externo`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(filtroExt.statusCode).toBe(200);
+    expect(
+      filtroExt.body.datos.movimientos.every(
+        (m) => m.unidadDestino.tipo === "externo"
+      )
+    ).toBe(true);
+
+    // 6. Obtener historial con filtro tipo_destino=interno (debe estar vacío)
+    const filtroInt = await request(app)
+      .get(`/movimientos/${expedienteId}/historial?tipo_destino=interno`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(filtroInt.statusCode).toBe(200);
+    expect(filtroInt.body.datos.movimientos.length).toBe(0);
+
+    // Limpieza
+    await request(app)
+      .delete(`/unidades/${unidadExternaId}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+  });
 });

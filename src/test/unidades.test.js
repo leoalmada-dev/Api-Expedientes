@@ -37,7 +37,7 @@ beforeAll(async () => {
   const res = await request(app)
     .post("/unidades")
     .set("Authorization", `Bearer ${adminToken}`)
-    .send({ nombre: "Unidad Restricción" });
+    .send({ nombre: "Unidad Restricción", tipo: "interno" });
   unidadId = res.body.datos.id;
 });
 
@@ -55,7 +55,7 @@ describe("Unidades - CRUD (Admin/Supervisor)", () => {
     const res = await request(app)
       .post("/unidades")
       .set("Authorization", `Bearer ${adminToken}`)
-      .send({ nombre: "Unidad Test" });
+      .send({ nombre: "Unidad Test", tipo: "interno" });
 
     expect(res.statusCode).toBe(201);
     expect(res.body.ok).toBe(true);
@@ -78,7 +78,7 @@ describe("Unidades - CRUD (Admin/Supervisor)", () => {
     const res = await request(app)
       .put(`/unidades/${tempUnidadId}`)
       .set("Authorization", `Bearer ${supervisorToken}`)
-      .send({ nombre: "Unidad Actualizada" });
+      .send({ nombre: "Unidad Actualizada", tipo: "interno" });
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.datos.nombre).toBe("Unidad Actualizada");
@@ -118,7 +118,30 @@ describe("Unidades - CRUD (Admin/Supervisor)", () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.ok).toBe(false);
     expect(res.body.mensaje).toMatch(/inválidos/i);
-    expect(res.body.errores[0].param).toBe("tipo");
+    expect(res.body.errores).toBeDefined();
+    expect(res.body.errores.length).toBeGreaterThan(0);
+
+    const errores = res.body.errores;
+    expect(errores).toBeDefined();
+    expect(Array.isArray(errores)).toBe(true);
+    expect(errores.length).toBeGreaterThan(0);
+    expect(errores.some((e) => e.path === "tipo" && /tipo/i.test(e.msg))).toBe(true);
+  });
+
+  it("Crea una unidad externo con tipo 'externo'", async () => {
+    const res = await request(app)
+      .post("/unidades")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ nombre: "Unidad Externo TEST", tipo: "externo" });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.datos.tipo).toBe("externo");
+
+    // Limpieza
+    await request(app)
+      .delete(`/unidades/${res.body.datos.id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
   });
 });
 
@@ -127,7 +150,7 @@ describe("Unidades - Restricción de permisos (operador y visualizador)", () => 
     const res = await request(app)
       .post("/unidades")
       .set("Authorization", `Bearer ${operadorToken}`)
-      .send({ nombre: "No debe crear" });
+      .send({ nombre: "No debe crear", tipo: "interno" });
     expect(res.statusCode).toBe(403);
     expect(res.body.ok).toBe(false);
   });
@@ -136,7 +159,7 @@ describe("Unidades - Restricción de permisos (operador y visualizador)", () => 
     const res = await request(app)
       .post("/unidades")
       .set("Authorization", `Bearer ${visualizadorToken}`)
-      .send({ nombre: "No debe crear" });
+      .send({ nombre: "No debe crear", tipo: "interno" });
     expect(res.statusCode).toBe(403);
     expect(res.body.ok).toBe(false);
   });
@@ -145,7 +168,7 @@ describe("Unidades - Restricción de permisos (operador y visualizador)", () => 
     const res = await request(app)
       .put(`/unidades/${unidadId}`)
       .set("Authorization", `Bearer ${operadorToken}`)
-      .send({ nombre: "Intento Operador" });
+      .send({ nombre: "Intento Operador", tipo: "interno" });
     expect(res.statusCode).toBe(403);
     expect(res.body.ok).toBe(false);
   });
@@ -154,7 +177,7 @@ describe("Unidades - Restricción de permisos (operador y visualizador)", () => 
     const res = await request(app)
       .put(`/unidades/${unidadId}`)
       .set("Authorization", `Bearer ${visualizadorToken}`)
-      .send({ nombre: "Intento Visualizador" });
+      .send({ nombre: "Intento Visualizador", tipo: "interno" });
     expect(res.statusCode).toBe(403);
     expect(res.body.ok).toBe(false);
   });
