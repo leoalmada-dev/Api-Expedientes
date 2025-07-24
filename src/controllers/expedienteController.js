@@ -2,7 +2,6 @@ const { Op } = require("sequelize");
 const {
   Expediente,
   Movimiento,
-  Unidad,
   Usuario,
   LogEliminacion,
 } = require("../models");

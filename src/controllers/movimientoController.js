@@ -3,7 +3,6 @@ const { Movimiento, Expediente, Unidad, Usuario } = require("../models");
 // Crear movimiento para un expediente existente
 exports.crearMovimiento = async (req, res) => {
   try {
-    // Solo admin, supervisor y operador pueden crear movimientos
     if (!["admin", "supervisor", "operador"].includes(req.user.rol)) {
       return res.status(403).json({
         ok: false,
@@ -22,20 +21,32 @@ exports.crearMovimiento = async (req, res) => {
 
     const usuarioId = req.user.id;
 
-    // Busca el expediente y controla eliminado/cerrado
+    // Buscar expediente
     const expediente = await Expediente.findByPk(expedienteId);
-    if (!expediente || expediente.eliminado)
+    if (!expediente || expediente.eliminado) {
       return res.status(404).json({
         ok: false,
         mensaje: "Expediente no encontrado o ha sido eliminado"
       });
+    }
 
-    // 🚫 NO permitir movimientos si está cerrado
-    if (expediente.estado === "cerrado")
+    if (expediente.estado === "cerrado") {
       return res.status(409).json({
         ok: false,
         mensaje: "No se pueden registrar movimientos en un expediente cerrado"
       });
+    }
+
+    // Validar existencia de unidadDestinoId
+    if (unidadDestinoId) {
+      const unidad = await Unidad.findByPk(unidadDestinoId);
+      if (!unidad) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: "Unidad de destino no válida"
+        });
+      }
+    }
 
     const movimiento = await Movimiento.create({
       expedienteId,
@@ -62,30 +73,28 @@ exports.crearMovimiento = async (req, res) => {
 exports.historialExpediente = async (req, res) => {
   try {
     const { expedienteId } = req.params;
-    const { eliminados } = req.query;
+    const { eliminados, tipo_destino } = req.query;
 
-    // Buscar expediente
     const expediente = await Expediente.findByPk(expedienteId, {
-      include: [
-        {
-          model: Usuario,
-          as: "creador",
-          attributes: ["id", "nombre", "correo"],
-        },
-      ],
+      include: [{
+        model: Usuario,
+        as: "creador",
+        attributes: ["id", "nombre", "correo"],
+      }],
     });
-    if (!expediente)
-      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
 
-    // Si está eliminado y no es supervisor, no puede verlo
-    if (expediente.eliminado && req.user.rol !== "supervisor")
+    if (!expediente) {
+      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
+    }
+
+    if (expediente.eliminado && req.user.rol !== "supervisor") {
       return res.status(403).json({
         ok: false,
         mensaje: "No tiene permiso para consultar el historial de un expediente eliminado"
       });
+    }
 
-    // Solo el supervisor puede listar movimientos eliminados
-    let whereMov = { expedienteId };
+    const whereMov = { expedienteId };
     if (eliminados === "true") {
       if (req.user.rol !== "supervisor") {
         return res.status(403).json({
@@ -101,8 +110,16 @@ exports.historialExpediente = async (req, res) => {
     const movimientos = await Movimiento.findAll({
       where: whereMov,
       include: [
-        { model: Unidad, as: "unidadDestino", attributes: ["id", "nombre"] },
-        { model: Unidad, as: "unidadOrigen", attributes: ["id", "nombre"] },
+        {
+          model: Unidad,
+          as: "unidadDestino",
+          attributes: ["id", "nombre", "tipo"]
+        },
+        {
+          model: Unidad,
+          as: "unidadOrigen",
+          attributes: ["id", "nombre", "tipo"]
+        },
         {
           model: Usuario,
           as: "usuario",
@@ -112,10 +129,15 @@ exports.historialExpediente = async (req, res) => {
       order: [["fecha_movimiento", "ASC"]],
     });
 
+    // Si se especifica tipo_destino, filtramos manualmente
+    const movimientosFiltrados = tipo_destino
+      ? movimientos.filter(m => m.unidadDestino?.tipo === tipo_destino)
+      : movimientos;
+
     res.json({
       ok: true,
       mensaje: "Historial de movimientos obtenido correctamente",
-      datos: { expediente, movimientos }
+      datos: { expediente, movimientos: movimientosFiltrados }
     });
   } catch (error) {
     console.error("Error al obtener historial:", error);

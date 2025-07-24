@@ -15,8 +15,8 @@ exports.crearUnidad = async (req, res) => {
   if (req.user.rol !== 'admin' && req.user.rol !== 'supervisor')
     return res.status(403).json({ ok: false, mensaje: 'No autorizado' });
   try {
-    const { nombre } = req.body;
-    const nueva = await Unidad.create({ nombre });
+    const { nombre, tipo = "interno" } = req.body;
+    const nueva = await Unidad.create({ nombre, tipo  });
     res.status(201).json({ ok: true, mensaje: "Unidad creada correctamente", datos: nueva });
   } catch (error) {
     res.status(500).json({ ok: false, mensaje: 'Error al crear unidad', error });
@@ -29,11 +29,11 @@ exports.actualizarUnidad = async (req, res) => {
     return res.status(403).json({ ok: false, mensaje: 'No autorizado' });
   try {
     const { id } = req.params;
-    const { nombre } = req.body;
+    const { nombre, tipo } = req.body;
     const unidad = await Unidad.findByPk(id);
     if (!unidad)
       return res.status(404).json({ ok: false, mensaje: 'Unidad no encontrada' });
-    await unidad.update({ nombre });
+    await unidad.update({ nombre, tipo });
     res.json({ ok: true, mensaje: "Unidad actualizada correctamente", datos: unidad });
   } catch (error) {
     res.status(500).json({ ok: false, mensaje: 'Error al actualizar unidad', error });

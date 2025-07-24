@@ -6,10 +6,20 @@ const Unidad = sequelize.define('Unidad', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true
+  },
+  tipo: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'interno',
+    validate: {
+      isIn: {
+        args: [['interno', 'externo']],
+        msg: 'El tipo debe ser "interno" o "externo"',
+      },
+    },
   }
 }, {
-  tableName: 'unidades' // <- Nombre correcto en plural español
+  tableName: 'unidades'
 });
-
 
 module.exports = Unidad;

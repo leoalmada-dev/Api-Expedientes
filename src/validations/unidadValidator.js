@@ -6,7 +6,13 @@ exports.validarUnidad = [
     .notEmpty()
     .withMessage('El nombre de la unidad es obligatorio')
     .isLength({ min: 2, max: 80 })
-    .withMessage('El nombre debe tener entre 2 y 80 caracteres')
+    .withMessage('El nombre debe tener entre 2 y 80 caracteres'),
+
+  // Nuevo: Validación para tipo
+  body('tipo')
+    .optional()
+    .isIn(['interno', 'externo'])
+    .withMessage('El tipo debe ser "interno" o "externo"'),
 ];
 
 // Middleware único para chequear errores de express-validator

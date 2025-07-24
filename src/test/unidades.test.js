@@ -71,7 +71,7 @@ describe("Unidades - CRUD (Admin/Supervisor)", () => {
     expect(res.body.ok).toBe(true);
     expect(Array.isArray(res.body.datos)).toBe(true);
     // Debe incluir la unidad creada
-    expect(res.body.datos.some(u => u.id === tempUnidadId)).toBe(true);
+    expect(res.body.datos.some((u) => u.id === tempUnidadId)).toBe(true);
   });
 
   it("Actualiza unidad (supervisor)", async () => {
@@ -91,6 +91,34 @@ describe("Unidades - CRUD (Admin/Supervisor)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.mensaje).toMatch(/eliminada/i);
+  });
+
+  it("Crea una unidad externo correctamente", async () => {
+    const res = await request(app)
+      .post("/unidades")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ nombre: "Unidad Externo Judicial", tipo: "externo" });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.datos.tipo).toBe("externo");
+
+    // Limpieza: eliminar la unidad creada
+    await request(app)
+      .delete(`/unidades/${res.body.datos.id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+  });
+
+  it("Rechaza creación de unidad con tipo inválido", async () => {
+    const res = await request(app)
+      .post("/unidades")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ nombre: "Unidad con tipo raro", tipo: "judicial" }); // inválido
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.mensaje).toMatch(/inválidos/i);
+    expect(res.body.errores[0].param).toBe("tipo");
   });
 });
 
