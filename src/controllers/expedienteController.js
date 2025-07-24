@@ -21,13 +21,12 @@ exports.crearExpediente = async (req, res) => {
   try {
     // Solo admin, supervisor y operador pueden crear expedientes
     if (!puedeCrearMovimiento(req.user.rol)) {
-      return res
-        .status(403)
-        .json({
-          ok: false,
-          mensaje: "No tiene permisos para crear expedientes",
-        });
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permisos para crear expedientes",
+      });
     }
+
     const {
       tipo_documento,
       numero_documento,
@@ -35,10 +34,19 @@ exports.crearExpediente = async (req, res) => {
       fecha_ingreso,
       referencia,
       detalle,
+      urgencia = "comun", // Valor por defecto
       primer_movimiento,
     } = req.body;
 
-    // Si se manda primer_movimiento, también controlar el rol
+    // Validar que urgencia sea válida
+    if (!["comun", "urgente"].includes(urgencia)) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "La urgencia debe ser 'comun' o 'urgente'",
+      });
+    }
+
+    // Validar primer_movimiento si existe
     if (primer_movimiento && !puedeCrearMovimiento(req.user.rol)) {
       return res.status(403).json({
         ok: false,
@@ -46,7 +54,6 @@ exports.crearExpediente = async (req, res) => {
       });
     }
 
-    // Validar primer_movimiento si existe
     if (primer_movimiento) {
       const mockReq = { body: primer_movimiento };
       const mockRes = {};
@@ -64,6 +71,7 @@ exports.crearExpediente = async (req, res) => {
     }
 
     const usuarioId = req.user.id;
+
     const expediente = await Expediente.create({
       tipo_documento,
       numero_documento,
@@ -72,6 +80,7 @@ exports.crearExpediente = async (req, res) => {
       referencia,
       detalle,
       creadoPorId: usuarioId,
+      urgencia, // NUEVO CAMPO
     });
 
     if (primer_movimiento) {
@@ -219,7 +228,7 @@ exports.listarExpedientes = async (req, res) => {
           attributes: ["id", "nombre", "correo"],
         },
       ],
-      order: [["fecha_ingreso", "DESC"]],
+      order: [["id", "ASC"]],
     });
 
     res.json({
@@ -240,12 +249,10 @@ exports.actualizarExpediente = async (req, res) => {
   try {
     // Solo admin y supervisor pueden actualizar
     if (!puedeGestionar(req.user.rol)) {
-      return res
-        .status(403)
-        .json({
-          ok: false,
-          mensaje: "No tiene permisos para modificar expedientes",
-        });
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permisos para modificar expedientes",
+      });
     }
     const { id } = req.params;
     const datos = req.body;
@@ -278,12 +285,10 @@ exports.eliminarExpediente = async (req, res) => {
   try {
     // Solo admin y supervisor pueden eliminar
     if (!puedeGestionar(req.user.rol)) {
-      return res
-        .status(403)
-        .json({
-          ok: false,
-          mensaje: "No tiene permisos para eliminar expedientes",
-        });
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tiene permisos para eliminar expedientes",
+      });
     }
     const { id } = req.params;
     const usuarioId = req.user.id;

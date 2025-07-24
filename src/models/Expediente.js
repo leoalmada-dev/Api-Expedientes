@@ -4,12 +4,11 @@ const sequelize = require("../config/database");
 const Expediente = sequelize.define(
   "Expediente",
   {
-    // id es autoincremental y primaryKey por defecto
     tipo_documento: { type: DataTypes.STRING, allowNull: false },
     numero_documento: { type: DataTypes.STRING, allowNull: false },
     forma_ingreso: { type: DataTypes.STRING, allowNull: false },
     fecha_ingreso: { type: DataTypes.DATEONLY, allowNull: false },
-    // procedencia: { type: DataTypes.STRING, allowNull: false },  // Si lo usás solo en movimientos, podés quitarlo de acá también
+
     referencia: { type: DataTypes.STRING },
     detalle: { type: DataTypes.TEXT },
     fecha_registro_sistema: {
@@ -32,6 +31,17 @@ const Expediente = sequelize.define(
     eliminado: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+    },
+    urgencia: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "comun",
+      validate: {
+        isIn: {
+          args: [["comun", "urgente"]],
+          msg: "La urgencia debe ser 'comun' o 'urgente'",
+        },
+      },
     },
   },
   {
