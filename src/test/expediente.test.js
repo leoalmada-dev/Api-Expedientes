@@ -47,7 +47,7 @@ afterAll(async () => {
       // Si ya estaba eliminado, ignorar error
     }
   }
-});
+}, 15000);
 
 describe("Expedientes", () => {
   it("Crea un expediente con su primer movimiento", async () => {
