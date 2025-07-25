@@ -1,3 +1,4 @@
+const registrarAuditoria = require('../helpers/registrarAuditoria');
 const { Usuario, Rol, Unidad } = require("../models");
 const bcrypt = require("bcryptjs");
 
@@ -47,6 +48,20 @@ exports.crearUsuario = async (req, res) => {
       rolId,
       unidadId,
     });
+
+    // Auditoría tolerante a errores
+    try {
+      await registrarAuditoria({
+        entidad: "usuario",
+        entidadId: nuevoUsuario.id,
+        accion: "crear",
+        usuarioId: req.user.id,
+        descripcion: `Creado usuario: nombre="${nombre}", ci="${ci}", correo="${correo}", rolId=${rolId}, unidadId=${unidadId}`
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (crear usuario):", e);
+    }
+
     res.status(201).json({
       ok: true,
       mensaje: "Usuario creado correctamente",
@@ -72,10 +87,32 @@ exports.actualizarUsuario = async (req, res) => {
         .status(404)
         .json({ ok: false, mensaje: "Usuario no encontrado" });
 
+    const datosViejos = {
+      nombre: usuario.nombre,
+      ci: usuario.ci,
+      correo: usuario.correo,
+      rolId: usuario.rolId,
+      unidadId: usuario.unidadId,
+    };
+
     let updateData = { nombre, ci, correo, rolId, unidadId };
     if (contraseña) updateData.contraseña = await bcrypt.hash(contraseña, 10);
 
     await usuario.update(updateData);
+
+    // Auditoría tolerante a errores
+    try {
+      await registrarAuditoria({
+        entidad: "usuario",
+        entidadId: usuario.id,
+        accion: "actualizar",
+        usuarioId: req.user.id,
+        descripcion: `De ${JSON.stringify(datosViejos)} a ${JSON.stringify(updateData)}`
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (actualizar usuario):", e);
+    }
+
     res.json({
       ok: true,
       mensaje: "Usuario actualizado correctamente",
@@ -100,7 +137,29 @@ exports.eliminarUsuario = async (req, res) => {
         .status(404)
         .json({ ok: false, mensaje: "Usuario no encontrado" });
 
+    const datosEliminados = {
+      nombre: usuario.nombre,
+      ci: usuario.ci,
+      correo: usuario.correo,
+      rolId: usuario.rolId,
+      unidadId: usuario.unidadId,
+    };
+
     await usuario.destroy();
+
+    // Auditoría tolerante a errores
+    try {
+      await registrarAuditoria({
+        entidad: "usuario",
+        entidadId: usuario.id,
+        accion: "eliminar",
+        usuarioId: req.user.id,
+        descripcion: `Usuario eliminado: ${JSON.stringify(datosEliminados)}`
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (eliminar usuario):", e);
+    }
+
     res.json({ ok: true, mensaje: "Usuario eliminado correctamente" });
   } catch (error) {
     res

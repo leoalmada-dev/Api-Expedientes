@@ -1,3 +1,4 @@
+const registrarAuditoria = require("../helpers/registrarAuditoria");
 const { Movimiento, Expediente, Unidad, Usuario } = require("../models");
 
 // Crear movimiento para un expediente existente
@@ -26,14 +27,14 @@ exports.crearMovimiento = async (req, res) => {
     if (!expediente || expediente.eliminado) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Expediente no encontrado o ha sido eliminado"
+        mensaje: "Expediente no encontrado o ha sido eliminado",
       });
     }
 
     if (expediente.estado === "cerrado") {
       return res.status(409).json({
         ok: false,
-        mensaje: "No se pueden registrar movimientos en un expediente cerrado"
+        mensaje: "No se pueden registrar movimientos en un expediente cerrado",
       });
     }
 
@@ -43,7 +44,7 @@ exports.crearMovimiento = async (req, res) => {
       if (!unidad) {
         return res.status(400).json({
           ok: false,
-          mensaje: "Unidad de destino no válida"
+          mensaje: "Unidad de destino no válida",
         });
       }
     }
@@ -58,6 +59,19 @@ exports.crearMovimiento = async (req, res) => {
       observaciones,
     });
 
+    // Después de crear el movimiento:
+    try {
+      await registrarAuditoria({
+        entidad: "movimiento",
+        entidadId: movimiento.id,
+        accion: "crear",
+        usuarioId: req.user.id,
+        descripcion: `ExpedienteId=${expedienteId}, tipo=${tipo}, fecha_movimiento=${fecha_movimiento}, unidadDestinoId=${unidadDestinoId}, unidadOrigenId=${unidadOrigenId}, observaciones="${observaciones}"`,
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (crear movimiento):", e);
+    }
+
     res.status(201).json({
       ok: true,
       mensaje: "Movimiento creado correctamente",
@@ -65,7 +79,9 @@ exports.crearMovimiento = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
-    res.status(500).json({ ok: false, mensaje: "Error al crear movimiento", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al crear movimiento", error });
   }
 };
 
@@ -76,21 +92,26 @@ exports.historialExpediente = async (req, res) => {
     const { eliminados, tipo_destino } = req.query;
 
     const expediente = await Expediente.findByPk(expedienteId, {
-      include: [{
-        model: Usuario,
-        as: "creador",
-        attributes: ["id", "nombre", "correo"],
-      }],
+      include: [
+        {
+          model: Usuario,
+          as: "creador",
+          attributes: ["id", "nombre", "correo"],
+        },
+      ],
     });
 
     if (!expediente) {
-      return res.status(404).json({ ok: false, mensaje: "Expediente no encontrado" });
+      return res
+        .status(404)
+        .json({ ok: false, mensaje: "Expediente no encontrado" });
     }
 
     if (expediente.eliminado && req.user.rol !== "supervisor") {
       return res.status(403).json({
         ok: false,
-        mensaje: "No tiene permiso para consultar el historial de un expediente eliminado"
+        mensaje:
+          "No tiene permiso para consultar el historial de un expediente eliminado",
       });
     }
 
@@ -99,7 +120,7 @@ exports.historialExpediente = async (req, res) => {
       if (req.user.rol !== "supervisor") {
         return res.status(403).json({
           ok: false,
-          mensaje: "No tiene permiso para ver movimientos eliminados"
+          mensaje: "No tiene permiso para ver movimientos eliminados",
         });
       }
       whereMov.eliminado = true;
@@ -113,12 +134,12 @@ exports.historialExpediente = async (req, res) => {
         {
           model: Unidad,
           as: "unidadDestino",
-          attributes: ["id", "nombre", "tipo"]
+          attributes: ["id", "nombre", "tipo"],
         },
         {
           model: Unidad,
           as: "unidadOrigen",
-          attributes: ["id", "nombre", "tipo"]
+          attributes: ["id", "nombre", "tipo"],
         },
         {
           model: Usuario,
@@ -131,17 +152,21 @@ exports.historialExpediente = async (req, res) => {
 
     // Si se especifica tipo_destino, filtramos manualmente
     const movimientosFiltrados = tipo_destino
-      ? movimientos.filter(m => m.unidadDestino?.tipo === tipo_destino)
+      ? movimientos.filter((m) => m.unidadDestino?.tipo === tipo_destino)
       : movimientos;
 
     res.json({
       ok: true,
       mensaje: "Historial de movimientos obtenido correctamente",
-      datos: { expediente, movimientos: movimientosFiltrados }
+      datos: { expediente, movimientos: movimientosFiltrados },
     });
   } catch (error) {
     console.error("Error al obtener historial:", error);
-    res.status(500).json({ ok: false, mensaje: "Error al obtener historial de movimientos", error });
+    res.status(500).json({
+      ok: false,
+      mensaje: "Error al obtener historial de movimientos",
+      error,
+    });
   }
 };
 
@@ -161,14 +186,38 @@ exports.actualizarMovimiento = async (req, res) => {
 
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
+      return res
+        .status(404)
+        .json({ ok: false, mensaje: "Movimiento no encontrado" });
     if (movimiento.eliminado && req.user.rol !== "supervisor")
       return res.status(403).json({
         ok: false,
         mensaje: "No tiene permiso para editar un movimiento eliminado",
       });
 
+    const datosViejos = {
+      tipo: movimiento.tipo,
+      fecha_movimiento: movimiento.fecha_movimiento,
+      unidadDestinoId: movimiento.unidadDestinoId,
+      unidadOrigenId: movimiento.unidadOrigenId,
+      observaciones: movimiento.observaciones,
+    };
+
     await movimiento.update(datos);
+
+    // Registrar auditoría (tolerante a error)
+    try {
+      await registrarAuditoria({
+        entidad: "movimiento",
+        entidadId: movimiento.id,
+        accion: "actualizar",
+        usuarioId: req.user.id,
+        descripcion: `De ${JSON.stringify(datosViejos)} a ${JSON.stringify(datos)}`,
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (actualizar movimiento):", e);
+    }
+
     res.json({
       ok: true,
       mensaje: "Movimiento actualizado correctamente",
@@ -176,10 +225,13 @@ exports.actualizarMovimiento = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al actualizar movimiento:", error);
-    res.status(500).json({ ok: false, mensaje: "Error al actualizar movimiento", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al actualizar movimiento", error });
   }
 };
 
+// Eliminación lógica de movimiento
 // Eliminación lógica de movimiento
 exports.eliminarMovimiento = async (req, res) => {
   try {
@@ -194,14 +246,16 @@ exports.eliminarMovimiento = async (req, res) => {
     const { id } = req.params;
     const movimiento = await Movimiento.findByPk(id);
     if (!movimiento)
-      return res.status(404).json({ ok: false, mensaje: "Movimiento no encontrado" });
+      return res
+        .status(404)
+        .json({ ok: false, mensaje: "Movimiento no encontrado" });
 
     // 🚫 Controlar si el expediente está cerrado
     const expediente = await Expediente.findByPk(movimiento.expedienteId);
     if (expediente && expediente.estado === "cerrado")
       return res.status(409).json({
         ok: false,
-        mensaje: "No se puede eliminar movimientos de un expediente cerrado"
+        mensaje: "No se puede eliminar movimientos de un expediente cerrado",
       });
 
     if (movimiento.eliminado)
@@ -209,11 +263,35 @@ exports.eliminarMovimiento = async (req, res) => {
         .status(400)
         .json({ ok: false, mensaje: "El movimiento ya estaba eliminado" });
 
+    const datosEliminados = {
+      tipo: movimiento.tipo,
+      fecha_movimiento: movimiento.fecha_movimiento,
+      unidadDestinoId: movimiento.unidadDestinoId,
+      unidadOrigenId: movimiento.unidadOrigenId,
+      observaciones: movimiento.observaciones,
+    };
+
     await movimiento.update({ eliminado: true });
+
+    // Registrar auditoría (tolerante a error)
+    try {
+      await registrarAuditoria({
+        entidad: "movimiento",
+        entidadId: movimiento.id,
+        accion: "eliminar",
+        usuarioId: req.user.id,
+        descripcion: `Movimiento eliminado: ${JSON.stringify(datosEliminados)}`,
+      });
+    } catch (e) {
+      console.error("Error registrando auditoría (eliminar movimiento):", e);
+    }
 
     res.json({ ok: true, mensaje: "Movimiento eliminado lógicamente." });
   } catch (error) {
     console.error("Error al eliminar movimiento:", error);
-    res.status(500).json({ ok: false, mensaje: "Error al eliminar movimiento", error });
+    res
+      .status(500)
+      .json({ ok: false, mensaje: "Error al eliminar movimiento", error });
   }
 };
+
