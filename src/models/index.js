@@ -1,10 +1,13 @@
+const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+
 const Rol = require('./Rol');
 const Usuario = require('./Usuario');
 const Unidad = require('./Unidad');
 const Expediente = require('./Expediente');
 const Movimiento = require('./Movimiento');
 const LogEliminacion = require('./LogEliminacion');
+const Auditoria = require('./Auditoria')(sequelize, DataTypes);  // <-- Asegúrate que el archivo se llama igual
 
 // Relaciones
 Usuario.belongsTo(Rol, { foreignKey: 'rolId' });
@@ -22,6 +25,7 @@ Movimiento.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
 Usuario.belongsTo(Unidad, { foreignKey: 'unidadId' });
 Unidad.hasMany(Usuario, { foreignKey: 'unidadId' });
 
+// Exports (importante incluir Auditoria aquí)
 module.exports = {
   sequelize,
   Rol,
@@ -30,4 +34,5 @@ module.exports = {
   Expediente,
   Movimiento,
   LogEliminacion,
+  Auditoria, // 👈 AGREGA esto al export!
 };
