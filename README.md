@@ -108,7 +108,8 @@ src/
 
 ```json
 {
-  "nombre": "Nueva Unidad"
+  "nombre": "Jefatura de Policía",
+  "tipo": "interno" | "externo"
 }
 ```
 
@@ -148,6 +149,7 @@ POST `/expedientes`
   "fecha_ingreso": "2025-07-16",
   "referencia": "Solicitud",
   "detalle": "Detalles adicionales",
+  "caracter": "urgente" | "comun",
   "primer_movimiento": {
     "tipo": "entrada",
     "fecha_movimiento": "2025-07-16",

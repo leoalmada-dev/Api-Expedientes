@@ -231,6 +231,22 @@ describe("Expedientes", () => {
     expect(res.body.ok).toBe(false);
     expect(res.body.mensaje).toMatch(/urgencia/i);
   });
+  it("Devuelve solo expedientes cerrados cuando se filtra por estado", async () => {
+    const res = await request(app)
+      .get("/expedientes?estado=cerrado") // adaptar si el query param es diferente
+      .set("Authorization", `Bearer ${adminToken}`); // usa el token que corresponda
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(Array.isArray(res.body.datos)).toBe(true);
+
+    const expedientes = res.body.datos;
+
+    // Asegura que todos estén cerrados
+    const algunoAbierto = expedientes.some((exp) => exp.estado !== "cerrado");
+
+    expect(algunoAbierto).toBe(false); // No debe haber ni uno abierto
+  });
 });
 
 describe("Expedientes - Update y Delete", () => {

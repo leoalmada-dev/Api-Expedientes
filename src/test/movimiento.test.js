@@ -210,12 +210,29 @@ describe("Movimientos - CRUD y permisos", () => {
   });
 
   it("Crea movimiento hacia unidad externa y filtra por tipo_destino", async () => {
-    // 1. Crear unidad externa
-    const unidadRes = await request(app)
-      .post("/unidades")
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ nombre: "Juzgado TEST", tipo: "externo" });
-    const unidadExternaId = unidadRes.body.datos.id;
+    // 1. Buscar o crear unidad externa "Juzgado TEST"
+    let unidadExternaId;
+
+    const listaUnidades = await request(app)
+      .get("/unidades")
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    const existente = listaUnidades.body.datos.find(
+      (u) => u.nombre === "Juzgado TEST"
+    );
+
+    if (existente) {
+      unidadExternaId = existente.id;
+    } else {
+      const unidadRes = await request(app)
+        .post("/unidades")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ nombre: "Juzgado TEST", tipo: "externo" });
+
+      expect(unidadRes.statusCode).toBe(201);
+      expect(unidadRes.body.ok).toBe(true);
+      unidadExternaId = unidadRes.body.datos.id;
+    }
 
     // 2. Crear expediente
     const expRes = await request(app)
@@ -270,9 +287,6 @@ describe("Movimientos - CRUD y permisos", () => {
     expect(filtroInt.statusCode).toBe(200);
     expect(filtroInt.body.datos.movimientos.length).toBe(0);
 
-    // Limpieza
-    await request(app)
-      .delete(`/unidades/${unidadExternaId}`)
-      .set("Authorization", `Bearer ${adminToken}`);
+    // ⚠️ No eliminamos la unidad "Juzgado TEST" para dejarla persistente
   });
 });

@@ -197,8 +197,12 @@ exports.obtenerExpediente = async (req, res) => {
 // === Listar expedientes con filtros (solo no eliminados) ===
 exports.listarExpedientes = async (req, res) => {
   try {
-    const { tipo_documento, fecha_desde, fecha_hasta, eliminados } = req.query;
+    const { tipo_documento, fecha_desde, fecha_hasta, eliminados, estado } =
+      req.query;
+
     const where = {};
+
+    // Validación de permisos para eliminados
     if (eliminados === "true") {
       if (req.user.rol !== "supervisor") {
         return res.status(403).json({
@@ -210,7 +214,14 @@ exports.listarExpedientes = async (req, res) => {
     } else {
       where.eliminado = false;
     }
+
+    // Filtro por tipo de documento
     if (tipo_documento) where.tipo_documento = tipo_documento;
+
+    // Filtro por estado
+    if (estado) where.estado = estado;
+
+    // Filtro por fechas
     if (fecha_desde && fecha_hasta) {
       where.fecha_ingreso = { [Op.between]: [fecha_desde, fecha_hasta] };
     } else if (fecha_desde) {
@@ -218,6 +229,7 @@ exports.listarExpedientes = async (req, res) => {
     } else if (fecha_hasta) {
       where.fecha_ingreso = { [Op.lte]: fecha_hasta };
     }
+
     const expedientes = await Expediente.findAll({
       where,
       include: [
@@ -230,6 +242,15 @@ exports.listarExpedientes = async (req, res) => {
       order: [["id", "ASC"]],
     });
 
+    // ✅ Respuesta si no se encuentra ningún expediente
+    if (expedientes.length === 0) {
+      return res.status(200).json({
+        ok: true,
+        mensaje: "No se encontraron expedientes con los filtros aplicados",
+        datos: [],
+      });
+    }
+
     res.json({
       ok: true,
       mensaje: "Expedientes listados correctamente",
@@ -237,9 +258,11 @@ exports.listarExpedientes = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al listar expedientes:", error);
-    res
-      .status(500)
-      .json({ ok: false, mensaje: "Error al listar expedientes", error });
+    res.status(500).json({
+      ok: false,
+      mensaje: "Error al listar expedientes",
+      error,
+    });
   }
 };
 
