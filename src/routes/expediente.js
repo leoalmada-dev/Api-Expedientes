@@ -13,7 +13,6 @@ const {
   validarCrearMovimiento,
   chequearErrores: chequearErroresMov
 } = require('../validations/movimientoValidator');
-
 /**
  * @swagger
  * tags:
@@ -74,6 +73,12 @@ const {
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Expediente'
+ *       403:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -99,8 +104,16 @@ const {
  *               $ref: '#/components/schemas/ExpedienteResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -125,8 +138,18 @@ const {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ExpedienteResponse'
+ *       403:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -159,10 +182,22 @@ const {
  *               $ref: '#/components/schemas/ExpedienteResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -183,10 +218,22 @@ const {
  *     responses:
  *       200:
  *         description: Expediente eliminado lógicamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -207,10 +254,22 @@ const {
  *     responses:
  *       200:
  *         description: Expediente cerrado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Solo supervisor puede cerrar
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -231,10 +290,22 @@ const {
  *     responses:
  *       200:
  *         description: Expediente reabierto correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Solo supervisor puede reabrir
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -261,126 +332,28 @@ const {
  *     responses:
  *       201:
  *         description: Movimiento creado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MovimientoResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Expediente:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         tipo_documento:
- *           type: string
- *           example: oficio
- *         numero_documento:
- *           type: string
- *         forma_ingreso:
- *           type: string
- *         fecha_ingreso:
- *           type: string
- *           format: date
- *         referencia:
- *           type: string
- *         detalle:
- *           type: string
- *         urgencia:
- *           type: string
- *           enum: [comun, urgente]
- *           example: urgente
- *         estado:
- *           type: string
- *           enum: [abierto, cerrado]
- *         eliminado:
- *           type: boolean
- *         creadoPorId:
- *           type: integer
- *         fecha_cierre:
- *           type: string
- *           format: date-time
- *     ExpedienteInput:
- *       type: object
- *       required:
- *         - tipo_documento
- *         - numero_documento
- *         - forma_ingreso
- *         - fecha_ingreso
- *         - urgencia
- *       properties:
- *         tipo_documento:
- *           type: string
- *           example: oficio
- *         numero_documento:
- *           type: string
- *         forma_ingreso:
- *           type: string
- *         fecha_ingreso:
- *           type: string
- *           format: date
- *         referencia:
- *           type: string
- *         detalle:
- *           type: string
- *         urgencia:
- *           type: string
- *           enum: [comun, urgente]
- *           example: comun
- *         primer_movimiento:
- *           $ref: '#/components/schemas/MovimientoInput'
- *     ExpedienteUpdate:
- *       type: object
- *       properties:
- *         tipo_documento:
- *           type: string
- *         numero_documento:
- *           type: string
- *         forma_ingreso:
- *           type: string
- *         fecha_ingreso:
- *           type: string
- *           format: date
- *         referencia:
- *           type: string
- *         detalle:
- *           type: string
- *         urgencia:
- *           type: string
- *           enum: [comun, urgente]
- *     ExpedienteResponse:
- *       type: object
- *       properties:
- *         ok:
- *           type: boolean
- *         mensaje:
- *           type: string
- *         datos:
- *           $ref: '#/components/schemas/Expediente'
- *     MovimientoInput:
- *       type: object
- *       required:
- *         - tipo
- *         - fecha_movimiento
- *         - unidadDestinoId
- *       properties:
- *         tipo:
- *           type: string
- *           enum: [entrada, salida]
- *           example: entrada
- *         fecha_movimiento:
- *           type: string
- *           format: date
- *         unidadDestinoId:
- *           type: integer
- *         unidadOrigenId:
- *           type: integer
- *         observaciones:
- *           type: string
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Expediente no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 

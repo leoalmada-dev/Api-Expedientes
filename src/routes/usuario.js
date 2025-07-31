@@ -3,7 +3,6 @@ const router = express.Router();
 const usuarioController = require('../controllers/usuarioController');
 const verifyToken = require('../middleware/verifyToken');
 const { validarCrearUsuario, chequearErrores } = require('../validations/usuarioValidator');
-
 /**
  * @swagger
  * tags:
@@ -37,6 +36,10 @@ const { validarCrearUsuario, chequearErrores } = require('../validations/usuario
  *                     $ref: '#/components/schemas/Usuario'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -62,10 +65,22 @@ const { validarCrearUsuario, chequearErrores } = require('../validations/usuario
  *               $ref: '#/components/schemas/UsuarioResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       409:
  *         description: Conflicto (CI ya registrado)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -98,10 +113,22 @@ const { validarCrearUsuario, chequearErrores } = require('../validations/usuario
  *               $ref: '#/components/schemas/UsuarioResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -122,88 +149,24 @@ const { validarCrearUsuario, chequearErrores } = require('../validations/usuario
  *     responses:
  *       200:
  *         description: Usuario eliminado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Usuario:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         nombre:
- *           type: string
- *           example: Leonardo Almada
- *         ci:
- *           type: string
- *           example: "12345678"
- *         correo:
- *           type: string
- *           example: leoalmada@correo.com
- *         rolId:
- *           type: integer
- *           example: 1
- *         unidadId:
- *           type: integer
- *           example: 2
- *         Rol:
- *           type: object
- *           properties:
- *             id:
- *               type: integer
- *             nombre:
- *               type: string
- *         Unidad:
- *           type: object
- *           properties:
- *             id:
- *               type: integer
- *             nombre:
- *               type: string
- *     UsuarioInput:
- *       type: object
- *       required:
- *         - nombre
- *         - ci
- *         - correo
- *         - contraseña
- *         - rolId
- *         - unidadId
- *       properties:
- *         nombre:
- *           type: string
- *           example: Leonardo Almada
- *         ci:
- *           type: string
- *           example: "12345678"
- *         correo:
- *           type: string
- *           example: leoalmada@correo.com
- *         contraseña:
- *           type: string
- *           example: usuario123
- *         rolId:
- *           type: integer
- *           example: 1
- *         unidadId:
- *           type: integer
- *           example: 2
- *     UsuarioResponse:
- *       type: object
- *       properties:
- *         ok:
- *           type: boolean
- *         mensaje:
- *           type: string
- *         datos:
- *           $ref: '#/components/schemas/Usuario'
- */
 
 router.get('/', verifyToken, usuarioController.listarUsuarios);
 

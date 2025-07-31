@@ -34,7 +34,7 @@ exports.crearExpediente = async (req, res) => {
       fecha_ingreso,
       referencia,
       detalle,
-      urgencia = "comun", // Valor por defecto
+      urgencia, // Valor por defecto
       primer_movimiento,
     } = req.body;
 

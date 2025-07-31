@@ -3,7 +3,6 @@ const router = express.Router();
 const unidadController = require('../controllers/unidadController');
 const verifyToken = require('../middleware/verifyToken');
 const { validarUnidad, chequearErrores } = require('../validations/unidadValidator');
-
 /**
  * @swagger
  * tags:
@@ -35,6 +34,12 @@ const { validarUnidad, chequearErrores } = require('../validations/unidadValidat
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Unidad'
+ *       403:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -60,8 +65,16 @@ const { validarUnidad, chequearErrores } = require('../validations/unidadValidat
  *               $ref: '#/components/schemas/UnidadResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -94,10 +107,22 @@ const { validarUnidad, chequearErrores } = require('../validations/unidadValidat
  *               $ref: '#/components/schemas/UnidadResponse'
  *       400:
  *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidationResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -118,51 +143,24 @@ const { validarUnidad, chequearErrores } = require('../validations/unidadValidat
  *     responses:
  *       200:
  *         description: Unidad eliminada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Unidad:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         nombre:
- *           type: string
- *           example: Jefatura de Policía
- *         tipo:
- *           type: string
- *           enum: [interno, externo]
- *           example: interno
- *     UnidadInput:
- *       type: object
- *       required:
- *         - nombre
- *         - tipo
- *       properties:
- *         nombre:
- *           type: string
- *           example: Jefatura de Policía
- *         tipo:
- *           type: string
- *           enum: [interno, externo]
- *           example: externo
- *     UnidadResponse:
- *       type: object
- *       properties:
- *         ok:
- *           type: boolean
- *         mensaje:
- *           type: string
- *         datos:
- *           $ref: '#/components/schemas/Unidad'
- */
 
 router.get('/', verifyToken, unidadController.listarUnidades);
 

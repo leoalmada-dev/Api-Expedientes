@@ -35,7 +35,7 @@ const Expediente = sequelize.define(
     urgencia: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "comun",
+      // defaultValue: "comun",
       validate: {
         isIn: {
           args: [["comun", "urgente"]],

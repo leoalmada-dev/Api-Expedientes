@@ -10,7 +10,7 @@ const Unidad = sequelize.define('Unidad', {
   tipo: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'interno',
+    // defaultValue: 'interno',
     validate: {
       isIn: {
         args: [['interno', 'externo']],
