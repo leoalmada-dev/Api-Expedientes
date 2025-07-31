@@ -5,6 +5,26 @@ const app = express();
 const morgan = require("morgan");
 require("dotenv").config();
 
+// ------ rate limiting ------
+const rateLimit = require('express-rate-limit');
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutos
+  max: 5, // máximo 5 intentos
+  message: {
+    ok: false,
+    mensaje: "Demasiados intentos de inicio de sesión, intente más tarde."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 100, // 100 requests por IP por minuto
+  message: { ok: false, mensaje: "Demasiadas peticiones, intente luego." },
+});
+// ------ /rate limiting ------
+
 // ------ SWAGGER/OpenAPI ------
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
@@ -34,6 +54,10 @@ app.use(express.json());
 
 // app.use(morgan(':method :url :status :res[content-length] - :response-time ms :remote-addr :user-agent'));
 app.use(morgan("dev")); //dev o combined
+
+// Limiters rutas
+app.use('/auth/login', loginLimiter);
+app.use(generalLimiter); // Si lo pones aquí, afecta a todas las rutas
 
 // Importar rutas principales
 app.use("/auth", require("./routes/auth"));
