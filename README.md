@@ -11,8 +11,11 @@ Este proyecto backend (Node.js, Express, Sequelize) administra expedientes, movi
 * **JWT** (Autenticación)
 * **bcryptjs** (Encriptado de contraseñas)
 * **express-validator** (Validación de datos)
+* **helmet** (Seguridad HTTP headers)
+* **express-rate-limit** (Rate limiting)
 * **Morgan** (Logs en consola)
 * **CORS** (Cross-Origin Resource Sharing)
+* **Swagger/OpenAPI**
 
 ---
 
@@ -21,16 +24,23 @@ Este proyecto backend (Node.js, Express, Sequelize) administra expedientes, movi
 ```
 src/
 ├── config/
-│   └── database.js
+│   ├── database.js
+│   └── swagger.js
 ├── controllers/
 │   ├── authController.js
 │   ├── expedienteController.js
 │   ├── movimientoController.js
 │   ├── unidadController.js
 │   └── usuarioController.js
+├── helpers/
+│   ├── registrarAuditoria.js
+│   └── registrarLoginIntento.js
 ├── middleware/
-│   └── verifyToken.js
+│   ├── verifyToken.js
+│   ├── loginLimiter.js
+│   └── generalLimiter.js
 ├── models/
+│   ├── Auditoria.js
 │   ├── Expediente.js
 │   ├── Movimiento.js
 │   ├── Unidad.js
@@ -51,6 +61,7 @@ src/
 │   ├── unidadValidator.js
 │   └── usuarioValidator.js
 └── app.js
+
 ```
 
 ---
@@ -109,7 +120,7 @@ src/
 ```json
 {
   "nombre": "Jefatura de Policía",
-  "tipo": "interno" | "externo"
+  "tipo": "interno" // o "externo"
 }
 ```
 
@@ -123,7 +134,7 @@ Ejemplo con filtros: `/expedientes?tipo_documento=oficio&fecha_desde=2025-07-01&
 (Se pueden utilizar uno o mas filtros)
 
 │ Parámetros para el FILTRO:
-│ - tipo_documento (string): "oficio", "apia", "memo", "fisico"
+│ - tipo_documento (string): "oficio", "apia", "memo", "fisico", "otro"
 │ - fecha_desde (YYYY-MM-DD)
 │ - fecha_hasta (YYYY-MM-DD)
 │ - estado (string): "cerrado", "abierto" (Una vez cerrado no se pueden asignar mas movimientos ni editar movimientos del mismo, solo se puede reabrir por el supervisor y esto qeda registrado)
@@ -149,7 +160,7 @@ POST `/expedientes`
   "fecha_ingreso": "2025-07-16",
   "referencia": "Solicitud",
   "detalle": "Detalles adicionales",
-  "caracter": "urgente" | "comun",
+  "caracter": "urgente", // o "comun"
   "primer_movimiento": {
     "tipo": "entrada",
     "fecha_movimiento": "2025-07-16",
@@ -199,12 +210,19 @@ PUT /movimientos/5
 }
 ```
 
+---
+## Auditoría y Logs
+
+* Auditoría completa: Todas las acciones de creación, edición y borrado de expedientes, movimientos, usuarios y unidades quedan registradas (quién, cuándo, IP, acción y detalle).
+* Intentos de login: Todos los intentos de login (exitosos, fallidos, bloqueados) quedan registrados (usuario, IP, motivo, timestamp).
 
 ---
 
 ## ✅ Validaciones
 
-Se utilizan validaciones robustas mediante **express-validator**. Se validan campos obligatorios, formatos correctos, y datos anidados como `primer_movimiento` en la creación de expedientes.
+* Todas las entradas pasan por express-validator.
+* Campos obligatorios, formatos, opciones válidas (urgencia, tipo de unidad, etc).
+* Errores claros y uniformes.
 
 ---
 
@@ -214,11 +232,18 @@ Todas las respuestas siguen el formato:
 
 ```json
 {
-  "ok": true|false,
+  "ok": true, // o false,
   "mensaje": "Mensaje claro en español",
   "datos": {}
 }
 ```
+---
+
+## 📑 Documentación Swagger (OpenAPI)
+
+* Acceso: http://localhost:3000/api-docs
+* Documentación interactiva y actualizada de todos los endpoints, ejemplos y schemas detallados.
+* Refleja todos los cambios de auditoría, seguridad, filtros y validaciones.
 
 ---
 
@@ -239,21 +264,21 @@ DB_NAME=expedientes_db
 
 ```bash
 npm install
-npm start | node src/server.js
+npm start # o node src/server.js
 ```
+│ Nota: En producción, usá migraciones (sequelize-cli db:migrate).
+│ sequelize.sync() debe usarse solo en desarrollo.
 
 ---
 
-## ⚙️ Próximos Pasos
+## 🧑‍💻 Tests automáticos
 
-* Implementar **tests automáticos** con Jest/Supertest.
-* Agregar auditoría/logs de acciones.
-* Mejoras de seguridad avanzadas.
+* Tests con Jest/Supertest para rutas, roles, validaciones y auditoría.
+* Cobertura de flujos críticos y errores.
 
 ---
 
 ### 🚀 Estado Actual
 
-El backend está funcional, seguro y validado. Listo para integración completa con el frontend.
-
-¡Buen trabajo hasta aquí!
+Backend profesional, seguro, validado y auditado.
+Listo para integración frontend y despliegue productivo.

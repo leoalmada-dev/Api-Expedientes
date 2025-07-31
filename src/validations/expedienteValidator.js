@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator');
 exports.validarCrearExpediente = [
   body('tipo_documento')
     .notEmpty().withMessage('El tipo de documento es obligatorio')
-    .isIn(['oficio', 'apia', 'memo', 'fisico'])
+    .isIn(['oficio', 'apia', 'memo', 'fisico', 'otro'])
     .withMessage('Tipo de documento inválido'),
   body('numero_documento')
     .notEmpty().withMessage('El número de documento es obligatorio')
