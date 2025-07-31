@@ -1,3 +1,4 @@
+const helmet = require('helmet');
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -10,7 +11,7 @@ const swaggerSpec = require("./config/swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // ------ /SWAGGER ------
 
-app.use(express.json());
+app.use(helmet()); // Seguridad HTTP headers por defecto
 
 app.use(
   cors({
@@ -23,11 +24,13 @@ app.use(
       "http://10.100.52.221",
       "http://10.100.52.221/SistemaSecGral",
       "http://10.100.52.221:80",
-      "http://10.100.52.221:80/SistemaSecGral"
+      "http://10.100.52.221:80/SistemaSecGral",
     ],
     credentials: true,
   })
 );
+
+app.use(express.json());
 
 // app.use(morgan(':method :url :status :res[content-length] - :response-time ms :remote-addr :user-agent'));
 app.use(morgan("dev")); //dev o combined
