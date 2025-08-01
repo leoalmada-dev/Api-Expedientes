@@ -27,6 +27,7 @@ const swaggerDefinition = {
       url: "http://localhost:3000",
       description: "Servidor local",
     },
+    { url: "http://10.100.52.221:3000", description: "Servidor producción" },
   ],
   components: {
     securitySchemes: {

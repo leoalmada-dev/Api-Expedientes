@@ -50,13 +50,13 @@ app.use("/usuarios", require("./routes/usuario"));
 app.use("/unidades", require("./routes/unidad"));
 
 // Importar modelos y sincronizar BD
-const models = require("./models");
-const { sequelize } = models;
+// const models = require("./models");
+// const { sequelize } = models;
 
-sequelize
-  .sync() // { alter: true } , { force: true }
-  .catch((error) => {
-    console.error("Error sincronizando base de datos:", error);
-  });
+// sequelize
+//   .sync() // { alter: true } , { force: true }
+//   .catch((error) => {
+//     console.error("Error sincronizando base de datos:", error);
+//   });
 
 module.exports = app;

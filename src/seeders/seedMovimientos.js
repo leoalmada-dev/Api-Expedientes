@@ -1,4 +1,4 @@
-const { Movimiento } = require('../models');
+const { Movimiento } = require('../src/models');
 
 module.exports = async function seedMovimientos() {
   await Movimiento.bulkCreate([

@@ -7,8 +7,8 @@
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": "",
+    "username": "admin",
+    "password": "JPM-SRV-2022",
     "database": "expedientes_db",
     "host": "localhost",
     "dialect": "mysql"

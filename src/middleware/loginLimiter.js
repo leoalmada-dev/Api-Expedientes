@@ -4,7 +4,7 @@ const registrarLoginIntento = require("../helpers/registrarLoginIntento");
 
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutos
-  max: 5,
+  max: 50,
   handler: async (req, res, next) => {
     // Registrar intento bloqueado (usuario o IP)
     await registrarLoginIntento({

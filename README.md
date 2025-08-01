@@ -66,6 +66,20 @@ src/
 
 ---
 
+## 🛡️ Seguridad y Buenas Prácticas
+
+- Headers seguros (helmet)
+- Rate limiting para login y toda la API
+- CORS restringido a orígenes confiables
+- Auditoría: todas las acciones críticas quedan registradas (usuario, acción, IP, detalles, timestamp)
+- Registro de intentos de login: exitosos, fallidos y bloqueados (usuario, IP, motivo, timestamp)
+- Autenticación JWT en todas las rutas protegidas
+- Control de roles: validación estricta por endpoint
+- Variables de entorno para claves y datos sensibles
+- Sincronización automática de base de datos solo en desarrollo (usá migraciones en producción)
+
+---
+
 ## 🔐 Usuarios Predefinidos
 
 | Usuario (CI) | Contraseña    | Rol          |

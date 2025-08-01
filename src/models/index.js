@@ -7,7 +7,7 @@ const Unidad = require('./Unidad');
 const Expediente = require('./Expediente');
 const Movimiento = require('./Movimiento');
 const LogEliminacion = require('./LogEliminacion');
-const Auditoria = require('./auditoria')(sequelize, DataTypes);  // <-- Asegúrate que el archivo se llama igual
+const Auditoria = require('./Auditoria')(sequelize, DataTypes);  // <-- Asegúrate que el archivo se llama igual
 const LoginIntento = require("./LoginIntento");
 
 // Relaciones
