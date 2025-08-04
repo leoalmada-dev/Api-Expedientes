@@ -9,6 +9,8 @@ exports.validarCrearExpediente = [
   body('numero_documento')
     .notEmpty().withMessage('El número de documento es obligatorio')
     .isLength({ min: 3, max: 30 }).withMessage('El número debe tener entre 3 y 30 caracteres'),
+  body('urgencia').notEmpty().withMessage('La urgencia es obligatoria')
+    .isIn(['comun', 'urgente']).withMessage("La urgencia debe ser 'comun' o 'urgente'"),
   body('forma_ingreso')
     .notEmpty().withMessage('La forma de ingreso es obligatoria')
     .isIn(['correo', 'apia', 'papel'])
@@ -59,9 +61,10 @@ exports.chequearErrores = (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       ok: false,
-      mensaje: 'Datos inválidos',
+      mensaje: errors.array().map(e => e.msg).join('. '), // Mensajes de todos los errores concatenados
       errores: errors.array(),
     });
   }
   next();
 };
+

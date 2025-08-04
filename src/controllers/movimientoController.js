@@ -59,7 +59,7 @@ exports.crearMovimiento = async (req, res) => {
       observaciones,
     });
 
-    // Después de crear el movimiento:
+    // Auditoría (opcional, igual que antes)
     try {
       await registrarAuditoria({
         entidad: "movimiento",
@@ -72,10 +72,41 @@ exports.crearMovimiento = async (req, res) => {
       console.error("Error registrando auditoría (crear movimiento):", e);
     }
 
+    // ⬇️ Volver a buscar el movimiento, ahora con todos los datos y relaciones
+    const movimientoCompleto = await Movimiento.findByPk(movimiento.id, {
+      include: [
+        {
+          model: Unidad,
+          as: "unidadDestino",
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+        },
+        {
+          model: Unidad,
+          as: "unidadOrigen",
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+        },
+        {
+          model: Usuario,
+          as: "usuario",
+          attributes: ["id", "nombre", "correo", "ci", "rolId", "unidadId"],
+          include: [
+            {
+              model: require("../models").Rol,
+              attributes: ["id", "nombre"],
+            },
+            {
+              model: Unidad,
+              attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+            },
+          ],
+        },
+      ],
+    });
+
     res.status(201).json({
       ok: true,
       mensaje: "Movimiento creado correctamente",
-      datos: movimiento,
+      datos: movimientoCompleto,
     });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
@@ -134,17 +165,27 @@ exports.historialExpediente = async (req, res) => {
         {
           model: Unidad,
           as: "unidadDestino",
-          attributes: ["id", "nombre", "tipo"],
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
         },
         {
           model: Unidad,
           as: "unidadOrigen",
-          attributes: ["id", "nombre", "tipo"],
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
         },
         {
           model: Usuario,
           as: "usuario",
-          attributes: ["id", "nombre", "correo"],
+          attributes: ["id", "nombre", "correo", "ci", "rolId", "unidadId"],
+          include: [
+            {
+              model: require("../models").Rol,
+              attributes: ["id", "nombre"],
+            },
+            {
+              model: Unidad,
+              attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+            },
+          ],
         },
       ],
       order: [["fecha_movimiento", "ASC"]],
@@ -212,7 +253,9 @@ exports.actualizarMovimiento = async (req, res) => {
         entidadId: movimiento.id,
         accion: "actualizar",
         usuarioId: req.user.id,
-        descripcion: `De ${JSON.stringify(datosViejos)} a ${JSON.stringify(datos)}`,
+        descripcion: `De ${JSON.stringify(datosViejos)} a ${JSON.stringify(
+          datos
+        )}`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (actualizar movimiento):", e);
@@ -294,4 +337,3 @@ exports.eliminarMovimiento = async (req, res) => {
       .json({ ok: false, mensaje: "Error al eliminar movimiento", error });
   }
 };
-

@@ -61,6 +61,7 @@ describe("Expedientes", () => {
         fecha_ingreso: "2025-07-16",
         referencia: "Test expediente",
         detalle: "Detalles desde test",
+        urgencia: "comun", // <--- Agregado!
         primer_movimiento: {
           tipo: "entrada",
           fecha_movimiento: "2025-07-16",
@@ -86,6 +87,7 @@ describe("Expedientes", () => {
         fecha_ingreso: "2025-07-17",
         referencia: "Solo expediente test",
         detalle: "Test sin movimiento",
+        urgencia: "comun", // <--- Agregado!
       });
     expect(res.statusCode).toBe(201);
     expect(res.body.ok).toBe(true);
@@ -104,6 +106,7 @@ describe("Expedientes", () => {
         fecha_ingreso: "2025-07-17",
         referencia: "test mov abierto",
         detalle: "Expediente para movimiento",
+        urgencia: "comun", // <--- Agregado!
       });
     const expId = expediente.body.datos.id;
     expedientesCreados.push(expId);
@@ -136,6 +139,7 @@ describe("Expedientes", () => {
         fecha_ingreso: "2025-07-19",
         referencia: "Para cierre",
         detalle: "Se va a cerrar",
+        urgencia: "comun", // <--- Agregado!
       });
     const expId = expediente.body.datos.id;
     expedientesCreados.push(expId);
@@ -185,7 +189,7 @@ describe("Expedientes", () => {
         fecha_ingreso: "2025-07-28",
         referencia: "Exp urgente",
         detalle: "Debe quedar con urgencia urgente",
-        urgencia: "urgente",
+        urgencia: "urgente", // <--- Ya estaba bien aquí
       });
 
     expect(res.statusCode).toBe(201);
@@ -194,7 +198,7 @@ describe("Expedientes", () => {
     expedientesCreados.push(res.body.datos.id);
   });
 
-  it('Crea un expediente sin urgencia (usa "comun" por defecto)', async () => {
+  it("NO permite crear expediente sin urgencia", async () => {
     const res = await request(app)
       .post("/expedientes")
       .set("Authorization", `Bearer ${adminToken}`)
@@ -203,14 +207,13 @@ describe("Expedientes", () => {
         numero_documento: "TEST-EXP-SIN-URG",
         forma_ingreso: "apia",
         fecha_ingreso: "2025-07-28",
-        referencia: "Sin urgencia explícita",
-        detalle: "Debe quedar como comun",
+        referencia: "Sin urgencia",
+        detalle: "Esto no debe crearse",
+        // urgencia: NO SE ENVÍA!
       });
-
-    expect(res.statusCode).toBe(201);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.datos.urgencia).toBe("comun");
-    expedientesCreados.push(res.body.datos.id);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.mensaje).toMatch(/urgencia/i);
   });
 
   it("NO permite urgencia inválida", async () => {
@@ -264,6 +267,7 @@ describe("Expedientes - Update y Delete", () => {
         fecha_ingreso: "2025-07-21",
         referencia: "Update test",
         detalle: "Para actualizar",
+        urgencia: "comun", // <--- Agregado!
       });
     expedienteId = res.body.datos.id;
     expedientesCreados.push(expedienteId);
@@ -310,6 +314,7 @@ it("Elimina expediente lógicamente y loguea la acción", async () => {
       fecha_ingreso: "2025-07-21",
       referencia: "Para borrar",
       detalle: "Eliminación lógica",
+      urgencia: "comun", // <--- Agregado!
     });
   const expId = res.body.datos.id;
   expedientesCreados.push(expId);
@@ -356,6 +361,7 @@ describe("Expedientes - permisos", () => {
         fecha_ingreso: "2025-07-25",
         referencia: "Operador crea",
         detalle: "Expediente operador",
+        urgencia: "comun", // <--- Agregado!
       });
     expect(res.statusCode).toBe(201);
     expect(res.body.ok).toBe(true);
@@ -373,6 +379,7 @@ describe("Expedientes - permisos", () => {
         fecha_ingreso: "2025-07-25",
         referencia: "Visualizador intenta",
         detalle: "No debería poder",
+        urgencia: "comun", // <--- Agregado!
       });
     // Puede devolver 403 (lo más estricto) o 401 según tu backend
     expect([401, 403]).toContain(res.statusCode);
@@ -391,6 +398,7 @@ describe("Expedientes - permisos", () => {
         fecha_ingreso: "2025-07-26",
         referencia: "Para test de permisos",
         detalle: "No editable por visualizador",
+        urgencia: "comun", // <--- Agregado!
       });
     const expId = resExp.body.datos.id;
     expedientesCreados.push(expId);
@@ -423,6 +431,7 @@ describe("Expedientes - permisos", () => {
         fecha_ingreso: "2025-07-27",
         referencia: "Para delete operador",
         detalle: "No debería eliminar",
+        urgencia: "comun", // <--- Agregado!
       });
     const expId = resExp.body.datos.id;
     expedientesCreados.push(expId);

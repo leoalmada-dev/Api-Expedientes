@@ -49,7 +49,9 @@ describe("Movimientos - CRUD y permisos", () => {
         fecha_ingreso: "2025-07-22",
         referencia: "Test movimiento",
         detalle: "Movimientos CRUD test",
+        urgencia: "comun", // <--- Agregado!
       });
+    console.log("BODY EXPEDIENTE:", resExp.body);
     expedienteId = resExp.body.datos.id;
   });
 
@@ -227,7 +229,11 @@ describe("Movimientos - CRUD y permisos", () => {
       const unidadRes = await request(app)
         .post("/unidades")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ nombre: "Juzgado TEST", tipo: "externo" });
+        .send({
+          nombre: "Juzgado TEST",
+          tipo: "externo",
+          tipo_institucion: "juzgado",
+        });
 
       expect(unidadRes.statusCode).toBe(201);
       expect(unidadRes.body.ok).toBe(true);
@@ -245,6 +251,7 @@ describe("Movimientos - CRUD y permisos", () => {
         fecha_ingreso: "2025-07-30",
         referencia: "Para test externo",
         detalle: "Movimiento externo test",
+        urgencia: "comun", // <--- Agregado!
       });
     const expedienteId = expRes.body.datos.id;
 

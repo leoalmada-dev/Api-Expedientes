@@ -92,9 +92,13 @@
  *           type: string
  *           enum: [interno, externo]
  *           example: externo
+ *         tipo_institucion:
+ *           type: string
+ *           enum: [dependencia, juzgado, particular]
+ *           example: juzgado
  *     UnidadInput:
  *       type: object
- *       required: [nombre, tipo]
+ *       required: [nombre, tipo, tipo_institucion]
  *       properties:
  *         nombre:
  *           type: string
@@ -103,6 +107,11 @@
  *           type: string
  *           enum: [interno, externo]
  *           example: externo
+ *         tipo_institucion:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 80
+ *           example: "Juzgado de Paz"
  *     UnidadResponse:
  *       type: object
  *       properties:
