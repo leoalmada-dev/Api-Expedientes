@@ -4,17 +4,21 @@ const {
   Movimiento,
   Usuario,
   LogEliminacion,
+  Unidad,
 } = require("../models");
 const {
   validarCrearMovimiento,
 } = require("../validations/movimientoValidator");
 const { validationResult } = require("express-validator");
 const registrarAuditoria = require("../helpers/registrarAuditoria");
+const {
+  puedeGestionar,
+  puedeCrearMovimiento,
+  puedeVerCerrados,
+} = require("../helpers/permisos");
 
-// === Helper de permisos ===
-const puedeGestionar = (rol) => ["admin", "supervisor"].includes(rol);
-const puedeCrearMovimiento = (rol) =>
-  ["admin", "supervisor", "operador"].includes(rol);
+// Si no existe, agregalo (adaptá el nombre según tu modelo)
+Expediente.belongsTo(Usuario, { as: "cerradoPor", foreignKey: "cerradoPorId" });
 
 // === Crear expediente (con primer movimiento opcional y validado) ===
 exports.crearExpediente = async (req, res) => {
@@ -109,7 +113,9 @@ exports.crearExpediente = async (req, res) => {
           entidadId: movimiento.id,
           accion: "crear",
           usuarioId,
-          descripcion: `Primer movimiento del expediente ${expediente.id}: ${JSON.stringify(primer_movimiento)}`
+          descripcion: `Primer movimiento del expediente ${
+            expediente.id
+          }: ${JSON.stringify(primer_movimiento)}`,
         });
       } catch (e) {
         console.error("Error registrando auditoría (primer movimiento):", e);
@@ -179,22 +185,55 @@ exports.crearMovimiento = async (req, res) => {
         entidadId: movimiento.id,
         accion: "crear",
         usuarioId,
-        descripcion: `Movimiento agregado a expedienteId=${expedienteId}: tipo=${tipo}, fecha_movimiento=${fecha_movimiento}, unidadDestinoId=${unidadDestinoId}, unidadOrigenId=${unidadOrigenId}, observaciones="${observaciones}"`
+        descripcion: `Movimiento agregado a expedienteId=${expedienteId}: tipo=${tipo}, fecha_movimiento=${fecha_movimiento}, unidadDestinoId=${unidadDestinoId}, unidadOrigenId=${unidadOrigenId}, observaciones="${observaciones}"`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (crear movimiento):", e);
     }
 
+    // ⬇️ Nuevo: traer movimiento con todas las relaciones
+    const movimientoCompleto = await Movimiento.findByPk(movimiento.id, {
+      include: [
+        {
+          model: Unidad,
+          as: "unidadDestino",
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+        },
+        {
+          model: Unidad,
+          as: "unidadOrigen",
+          attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+        },
+        {
+          model: Usuario,
+          as: "usuario",
+          attributes: ["id", "nombre", "correo", "ci", "rolId", "unidadId"],
+          include: [
+            {
+              model: require("../models").Rol,
+              attributes: ["id", "nombre"],
+            },
+            {
+              model: Unidad,
+              attributes: ["id", "nombre", "tipo", "tipo_institucion"],
+            },
+          ],
+        },
+      ],
+    });
+
     res.status(201).json({
       ok: true,
       mensaje: "Movimiento creado correctamente",
-      datos: movimiento,
+      datos: movimientoCompleto,
     });
   } catch (error) {
     console.error("Error al crear movimiento:", error);
-    res
-      .status(500)
-      .json({ ok: false, mensaje: "Error al crear movimiento", error });
+    res.status(500).json({
+      ok: false,
+      mensaje: "Error al crear movimiento",
+      error,
+    });
   }
 };
 
@@ -233,7 +272,7 @@ exports.obtenerExpediente = async (req, res) => {
   }
 };
 
-// === Listar expedientes con filtros (solo no eliminados) ===
+// === Listar expedientes ===
 exports.listarExpedientes = async (req, res) => {
   try {
     const { tipo_documento, fecha_desde, fecha_hasta, eliminados, estado } =
@@ -243,7 +282,7 @@ exports.listarExpedientes = async (req, res) => {
 
     // Validación de permisos para eliminados
     if (eliminados === "true") {
-      if (req.user.rol !== "supervisor") {
+      if (!puedeGestionar(req.user.rol)) {
         return res.status(403).json({
           ok: false,
           mensaje: "No tiene permiso para ver expedientes eliminados",
@@ -257,8 +296,17 @@ exports.listarExpedientes = async (req, res) => {
     // Filtro por tipo de documento
     if (tipo_documento) where.tipo_documento = tipo_documento;
 
-    // Filtro por estado
-    if (estado) where.estado = estado;
+    // Filtro por estado - usando helper puedeVerCerrados
+    if (estado === "cerrado") {
+      if (puedeVerCerrados(req.user.rol)) {
+        where.estado = "cerrado";
+      } else {
+        where.estado = "abierto";
+      }
+    } else {
+      // Por defecto, si no filtra, todos ven solo abiertos
+      where.estado = "abierto";
+    }
 
     // Filtro por fechas
     if (fecha_desde && fecha_hasta) {
@@ -277,11 +325,15 @@ exports.listarExpedientes = async (req, res) => {
           as: "creador",
           attributes: ["id", "nombre", "correo"],
         },
+        {
+          model: Usuario,
+          as: "cerradoPor",
+          attributes: ["id", "nombre", "correo"], // Info del usuario que cerró
+        },
       ],
       order: [["id", "ASC"]],
     });
 
-    // ✅ Respuesta si no se encuentra ningún expediente
     if (expedientes.length === 0) {
       return res.status(200).json({
         ok: true,
@@ -345,7 +397,9 @@ exports.actualizarExpediente = async (req, res) => {
         entidadId: expediente.id,
         accion: "actualizar",
         usuarioId: req.user.id,
-        descripcion: `Modificado(s): ${Object.keys(datos).join(", ")}. De ${JSON.stringify(datosViejos)} a ${JSON.stringify(datos)}`
+        descripcion: `Modificado(s): ${Object.keys(datos).join(
+          ", "
+        )}. De ${JSON.stringify(datosViejos)} a ${JSON.stringify(datos)}`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (actualizar expediente):", e);
@@ -412,7 +466,7 @@ exports.eliminarExpediente = async (req, res) => {
         entidadId: expediente.id,
         accion: "eliminar",
         usuarioId,
-        descripcion: `Expediente eliminado: ${JSON.stringify(datosEliminados)}`
+        descripcion: `Expediente eliminado: ${JSON.stringify(datosEliminados)}`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (eliminar expediente):", e);
@@ -463,7 +517,7 @@ exports.cerrarExpediente = async (req, res) => {
         entidadId: expediente.id,
         accion: "cerrar",
         usuarioId,
-        descripcion: `Expediente cerrado por usuario ${usuarioId} en ${new Date().toISOString()}`
+        descripcion: `Expediente cerrado por usuario ${usuarioId} en ${new Date().toISOString()}`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (cerrar expediente):", e);
@@ -509,7 +563,9 @@ exports.reabrirExpediente = async (req, res) => {
         entidadId: expediente.id,
         accion: "reabrir",
         usuarioId: req.user.id,
-        descripcion: `Expediente reabierto por usuario ${req.user.id} en ${new Date().toISOString()}`
+        descripcion: `Expediente reabierto por usuario ${
+          req.user.id
+        } en ${new Date().toISOString()}`,
       });
     } catch (e) {
       console.error("Error registrando auditoría (reabrir expediente):", e);
