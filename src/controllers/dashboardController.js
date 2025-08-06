@@ -1,4 +1,4 @@
-const { Expediente, Movimiento } = require("../models");
+const { Expediente, Movimiento, Usuario, LoginIntento } = require("../models");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -24,6 +24,8 @@ exports.dashboardStats = async (req, res) => {
       movimientosSemana,
       urgentesAbiertos,
       comunesAbiertos,
+      totalUsuarios,
+      usuariosActivosSemana,
     ] = await Promise.all([
       Expediente.count({ where: { eliminado: false } }),
       Expediente.count({ where: { eliminado: false, estado: "abierto" } }),
@@ -36,6 +38,7 @@ exports.dashboardStats = async (req, res) => {
       Movimiento.count({
         where: { eliminado: false, fecha_movimiento: hoyStr },
       }),
+
       Movimiento.count({
         where: { eliminado: false, fecha_movimiento: { [Op.gte]: hace7Str } },
       }),
@@ -51,6 +54,15 @@ exports.dashboardStats = async (req, res) => {
           eliminado: false,
           estado: "abierto",
           urgencia: "comun",
+        },
+      }),
+      Usuario.count(),
+      LoginIntento.count({
+        distinct: true,
+        col: "usuario",
+        where: {
+          exito: true,
+          createdAt: { [Op.gte]: hace7Str },
         },
       }),
     ]);
@@ -122,6 +134,39 @@ exports.dashboardStats = async (req, res) => {
         ).length;
       }
 
+      // Usuarios totales
+      const totalUsuarios = await Usuario.count();
+
+      // Usuarios activos esta semana (por logins)
+      const usuariosActivosSemana = await LoginIntento.count({
+        distinct: true,
+        col: "usuario",
+        where: {
+          exito: true,
+          createdAt: { [Op.gte]: hace7Str },
+        },
+      });
+
+      // Usuarios inactivos esta semana
+      const usuariosTotalesArr = await Usuario.findAll({
+        attributes: ["ci"],
+        raw: true,
+      });
+      const usuariosActivosArr = await LoginIntento.findAll({
+        attributes: [
+          [sequelize.fn("DISTINCT", sequelize.col("usuario")), "usuario"],
+        ],
+        where: {
+          exito: true,
+          createdAt: { [Op.gte]: hace7Str },
+        },
+        raw: true,
+      });
+      const activosCIs = usuariosActivosArr.map((u) => u.usuario);
+      const usuariosInactivosSemana = usuariosTotalesArr.filter(
+        (u) => !activosCIs.includes(u.ci)
+      ).length;
+
       // Expedientes reabiertos (pasaron de cerrado a abierto, usando updatedAt)
       const expedientesReabiertos = await Expediente.count({
         where: {
@@ -130,7 +175,11 @@ exports.dashboardStats = async (req, res) => {
           eliminado: false,
         },
       });
+
       // Agregar al objeto datos:
+      datos.totales.usuarios = totalUsuarios;
+      datos.totales.usuariosActivosSemana = usuariosActivosSemana;
+      datos.totales.usuariosInactivosSemana = usuariosInactivosSemana;
       datos.totales.expedientesCerrados = totalCerrados;
       datos.porTipoDocumento = porTipoDocumento;
       datos.porUrgencia = porUrgencia;
