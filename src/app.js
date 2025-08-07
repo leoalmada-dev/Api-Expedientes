@@ -49,6 +49,7 @@ app.use("/movimientos", require("./routes/movimiento"));
 app.use("/usuarios", require("./routes/usuario"));
 app.use("/unidades", require("./routes/unidad"));
 app.use("/dashboard", require("./routes/dashboard"));
+app.use("/reportes", require("./routes/reportes"));
 
 // Importar modelos y sincronizar BD
 // const models = require("./models");

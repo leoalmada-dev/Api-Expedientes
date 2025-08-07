@@ -275,8 +275,7 @@ exports.obtenerExpediente = async (req, res) => {
 // === Listar expedientes ===
 exports.listarExpedientes = async (req, res) => {
   try {
-    const { tipo_documento, fecha_desde, fecha_hasta, eliminados, estado } =
-      req.query;
+    const { tipo_documento, fecha_desde, fecha_hasta, eliminados, estado, urgencia } = req.query;
 
     const where = {};
 
@@ -295,6 +294,19 @@ exports.listarExpedientes = async (req, res) => {
 
     // Filtro por tipo de documento
     if (tipo_documento) where.tipo_documento = tipo_documento;
+
+    // === Filtro por urgencia ===
+    if (urgencia !== undefined) {
+      // Normalizamos a minúscula
+      const urg = urgencia.toLowerCase();
+      if (!["urgente", "comun"].includes(urg)) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: "El valor de urgencia debe ser 'urgente' o 'comun'",
+        });
+      }
+      where.urgencia = urg;
+    }
 
     // Filtro por estado - usando helper puedeVerCerrados
     if (estado === "cerrado") {
