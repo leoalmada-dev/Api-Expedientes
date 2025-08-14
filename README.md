@@ -236,8 +236,6 @@ Todos los endpoints requieren **JWT** (header `Authorization: Bearer <token>`).
 - **/reportes/expedientes** → `admin`, `supervisor`, `operador`
 - **/reportes/usuarios/:usuarioId/actividad** → `admin`, `supervisor` o el **propio usuario**
 
----
-
 ### GET /reportes/usuarios
 
 **Descripción:** Métricas por usuario (totales históricos, actividad última semana, logins).
