@@ -44,11 +44,7 @@ const swaggerDefinition = {
 // Puedes agregar otras opciones si lo deseas
 const swaggerOptions = {
   swaggerDefinition,
-  apis: [
-    "./src/routes/*.js",
-    // Si tus modelos tienen anotaciones, también inclúyelos:
-    // "./src/models/*.js",
-  ],
+  apis: ["./src/routes/*.js", "./src/routes/swaggerSchemas.js"],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);

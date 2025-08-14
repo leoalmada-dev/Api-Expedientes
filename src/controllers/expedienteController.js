@@ -297,7 +297,6 @@ exports.listarExpedientes = async (req, res) => {
 
     // === Filtro por urgencia ===
     if (urgencia !== undefined) {
-      // Normalizamos a minúscula
       const urg = urgencia.toLowerCase();
       if (!["urgente", "comun"].includes(urg)) {
         return res.status(400).json({
@@ -340,12 +339,13 @@ exports.listarExpedientes = async (req, res) => {
         {
           model: Usuario,
           as: "cerradoPor",
-          attributes: ["id", "nombre", "correo"], // Info del usuario que cerró
+          attributes: ["id", "nombre", "correo"],
         },
       ],
       order: [["id", "ASC"]],
     });
 
+    // Si no hay expedientes, responde vacío
     if (expedientes.length === 0) {
       return res.status(200).json({
         ok: true,
@@ -354,10 +354,35 @@ exports.listarExpedientes = async (req, res) => {
       });
     }
 
+    // Cálculo del plazo vencido (reaprovechando la lógica del reporte)
+    const hoy = new Date();
+
+    const datos = expedientes.map(exp => {
+      const fechaIngreso = new Date(exp.fecha_ingreso);
+      const fechaCierre = exp.fecha_cierre ? new Date(exp.fecha_cierre) : null;
+      const estado = exp.estado;
+      const diasPermitidos = exp.urgencia === "urgente" ? 2 : 5;
+
+      let plazo_vencido = false;
+      if (estado === "cerrado" && fechaCierre) {
+        const dias = Math.ceil((fechaCierre - fechaIngreso) / (1000 * 60 * 60 * 24));
+        plazo_vencido = dias > diasPermitidos;
+      } else if (estado === "abierto") {
+        const diasTranscurridos = Math.ceil((hoy - fechaIngreso) / (1000 * 60 * 60 * 24));
+        plazo_vencido = diasTranscurridos > diasPermitidos;
+      }
+
+      // Devolver el expediente con el campo extra
+      return {
+        ...exp.toJSON(),
+        plazo_vencido, // true = vencido, false = en plazo
+      };
+    });
+
     res.json({
       ok: true,
       mensaje: "Expedientes listados correctamente",
-      datos: expedientes,
+      datos,
     });
   } catch (error) {
     console.error("Error al listar expedientes:", error);
