@@ -6,16 +6,16 @@ Este proyecto backend (Node.js, Express, Sequelize) administra expedientes, movi
 
 ## 🛠️ Tecnologías y Herramientas
 
-* **Node.js + Express**
-* **Sequelize ORM (MySQL)**
-* **JWT** (Autenticación)
-* **bcryptjs** (Encriptado de contraseñas)
-* **express-validator** (Validación de datos)
-* **helmet** (Seguridad HTTP headers)
-* **express-rate-limit** (Rate limiting)
-* **Morgan** (Logs en consola)
-* **CORS** (Cross-Origin Resource Sharing)
-* **Swagger/OpenAPI**
+- **Node.js + Express**
+- **Sequelize ORM (MySQL)**
+- **JWT** (Autenticación)
+- **bcryptjs** (Encriptado de contraseñas)
+- **express-validator** (Validación de datos)
+- **helmet** (Seguridad HTTP headers)
+- **express-rate-limit** (Rate limiting)
+- **Morgan** (Logs en consola)
+- **CORS** (Cross-Origin Resource Sharing)
+- **Swagger/OpenAPI**
 
 ---
 
@@ -95,7 +95,7 @@ src/
 
 ### **Autenticación (`/auth`)**
 
-* **POST** `/auth/login`
+- **POST** `/auth/login`
 
 ```json
 {
@@ -104,13 +104,12 @@ src/
 }
 ```
 
-
 ### **Usuarios (`/usuarios`)**
 
-* GET `/usuarios` (admin, supervisor)
-* POST `/usuarios` (admin, supervisor)
-* PUT `/usuarios/:id` (admin, supervisor)
-* DELETE `/usuarios/:id` (admin, supervisor)
+- GET `/usuarios` (admin, supervisor)
+- POST `/usuarios` (admin, supervisor)
+- PUT `/usuarios/:id` (admin, supervisor)
+- DELETE `/usuarios/:id` (admin, supervisor)
 
 ```json
 {
@@ -123,13 +122,12 @@ src/
 }
 ```
 
-
 ### **Unidades (`/unidades`)**
 
-* GET `/unidades` (todos los roles)
-* POST `/unidades` (admin, supervisor)
-* PUT `/unidades/:id` (admin, supervisor)
-* DELETE `/unidades/:id` (admin, supervisor)
+- GET `/unidades` (todos los roles)
+- POST `/unidades` (admin, supervisor)
+- PUT `/unidades/:id` (admin, supervisor)
+- DELETE `/unidades/:id` (admin, supervisor)
 
 ```json
 {
@@ -138,14 +136,13 @@ src/
 }
 ```
 
-
 ### **Expedientes (`/expedientes`)**
 
-* POST `/expedientes` crea un expediente y, en la misma petición, crea su primer movimiento de entrada (Ejemplo mas abajo)
-* GET `/expedientes` (todos los roles)
-Devuelve todos los expedientes si no le aplicas filtros.
-Ejemplo con filtros: `/expedientes?tipo_documento=oficio&fecha_desde=2025-07-01&fecha_hasta=2025-07-31`
-(Se pueden utilizar uno o mas filtros)
+- POST `/expedientes` crea un expediente y, en la misma petición, crea su primer movimiento de entrada (Ejemplo mas abajo)
+- GET `/expedientes` (todos los roles)
+  Devuelve todos los expedientes si no le aplicas filtros.
+  Ejemplo con filtros: `/expedientes?tipo_documento=oficio&fecha_desde=2025-07-01&fecha_hasta=2025-07-31`
+  (Se pueden utilizar uno o mas filtros)
 
 │ Parámetros para el FILTRO:
 │ - tipo_documento (string): "oficio", "apia", "memo", "fisico", "otro"
@@ -156,16 +153,17 @@ Ejemplo con filtros: `/expedientes?tipo_documento=oficio&fecha_desde=2025-07-01&
 │ Ejemplo eliminados: GET `/expedientes?eliminados=true`
 │ Si no se incluye eliminados solo se muestran los expedientes activos (no eliminados).
 
-* GET	`/expedientes/:id`	Obtener expediente por ID
-* PUT	`/expedientes/:id`	Actualizar expediente	(Supervisor, admin)
-* DELETE	`/expedientes/:id`	Eliminar expediente (lógico)	(Supervisor, admin)
-* POST	`/expedientes/:id/cerrar`	Cerrar expediente	(Supervisor)
-* POST	`/expedientes/:id/reabrir`	Reabrir expediente	(Supervisor)
-* POST	`/expedientes/:expedienteId/movimientos`	Crear movimiento para expediente
-(Ejemplo mas abajo en Seccion Movimientos)
+- GET `/expedientes/:id` Obtener expediente por ID
+- PUT `/expedientes/:id` Actualizar expediente (Supervisor, admin)
+- DELETE `/expedientes/:id` Eliminar expediente (lógico) (Supervisor, admin)
+- POST `/expedientes/:id/cerrar` Cerrar expediente (Supervisor)
+- POST `/expedientes/:id/reabrir` Reabrir expediente (Supervisor)
+- POST `/expedientes/:expedienteId/movimientos` Crear movimiento para expediente
+  (Ejemplo mas abajo en Seccion Movimientos)
 
 Ejemplo para crear expediente (con movimiento):
 POST `/expedientes`
+
 ```json
 {
   "tipo_documento": "oficio",
@@ -187,23 +185,24 @@ POST `/expedientes`
 Ejemplo para actualizar expediente:
 (podes enviar solo la variable q vas a actualizar)
 
-* PUT /expedientes/1
+- PUT /expedientes/1
+
 ```json
 {
   "detalle": "Nuevo detalle del expediente"
 }
 ```
 
-
 ### **Movimientos (`/expedientes/:expedienteId/movimientos`)**
 
-* PUT	`/movimientos/:id`	Actualizar movimiento	(Supervisor, admin)
-* DELETE	`/movimientos/:id`	Eliminar movimiento (lógico)	(Supervisor, admin)
-* GET	`/movimientos/:expedienteId/historial`	Obtener historial completo de un expediente (todos los roles)
-* POST	`/expedientes/:expedienteId/movimientos`	Crear movimiento para expediente (todos menos visualizador)
+- PUT `/movimientos/:id` Actualizar movimiento (Supervisor, admin)
+- DELETE `/movimientos/:id` Eliminar movimiento (lógico) (Supervisor, admin)
+- GET `/movimientos/:expedienteId/historial` Obtener historial completo de un expediente (todos los roles)
+- POST `/expedientes/:expedienteId/movimientos` Crear movimiento para expediente (todos menos visualizador)
 
 Ejemplo para crear movimiento:
 POST /expedientes/1/movimientos
+
 ```json
 {
   "tipo": "salida",
@@ -218,6 +217,7 @@ Ejemplo para actualizar movimiento:
 (podes enviar solo la variable q vas a actualizar)
 
 PUT /movimientos/5
+
 ```json
 {
   "observaciones": "Observaciones editadas"
@@ -225,18 +225,133 @@ PUT /movimientos/5
 ```
 
 ---
+
+## Reportes
+
+### Autenticación y roles
+
+Todos los endpoints requieren **JWT** (header `Authorization: Bearer <token>`).
+
+- **/reportes/usuarios** → `admin`, `supervisor`
+- **/reportes/expedientes** → `admin`, `supervisor`, `operador`
+- **/reportes/usuarios/:usuarioId/actividad** → `admin`, `supervisor` o el **propio usuario**
+
+---
+
+### GET /reportes/usuarios
+
+**Descripción:** Métricas por usuario (totales históricos, actividad última semana, logins).
+
+**Query params**
+
+- `rol` _(int)_ — filtra por `rolId`
+- `unidadId` _(int)_ — filtra por unidad
+- `buscar` _(string)_ — nombre/correo/CI (like)
+- `activo` = `semana` _(opcional)_ — solo usuarios con actividad en la última semana
+
+**Respuesta (resumen)**
+
+```json
+{
+  "ok": true,
+  "datos": {
+    "resumen": {
+      "total": 4,
+      "activosSemana": 3,
+      "inactivosSemana": 1,
+      "conIntentosFallidosSemana": 1
+    },
+    "usuarios": [ /* ReporteUsuariosItem[] */ ]
+  }
+}
+```
+
+**Ejemplo**
+```bash
+curl -H "Authorization: Bearer $TOKEN" \"http://localhost:3000/reportes/usuarios?activo=semana&buscar=maria"
+```
+
+### GET /reportes/expedientes
+
+**Descripción:** Lista de expedientes con plazo y destino del último movimiento de salida.
+
+**Incluye:**
+
+- plazo_cumplido: true (cumplido), false (incumplido/vencido), null (abierto y aún en plazo)
+- plazo_vencido: boolean derivado (plazo_cumplido === false)
+- Query params
+- Fechas: fecha_desde, fecha_hasta (YYYY-MM-DD) o rango ∈ hoy|semana|mes
+- Filtros: tipo_documento, urgencia ∈ comun|urgente, referencia (like)
+- Destino: tipo_destino ∈ interno|externo|todos
+- Plazo: plazo ∈ cumplido|incumplido
+- Paginación/orden: limit (≤ 200), page (≥ 1), orderBy ∈ fecha_ingreso|fecha_cierre|urgencia|estado|id, orderDir ∈ ASC|DESC
+
+**Respuesta (resumen + meta)**
+```json
+{
+  "ok": true,
+  "meta": { "page": 1, "limit": 50, "returned": 25 },
+  "datos": {
+    "resumen": {
+      "total": 25,
+      "cumplieron_plazo": 18,
+      "incumplieron_plazo": 4,
+      "en_plazo": 3,
+      "cerrados_fuera_plazo": 2
+    },
+    "expedientes": [
+      {
+        "id": 10,
+        "tipo_documento": "oficio",
+        "fecha_ingreso": "2025-07-16",
+        "estado": "abierto",
+        "fecha_cierre": null,
+        "urgencia": "comun",
+        "plazo_cumplido": null,
+        "plazo_vencido": false,
+        "destino": { "tipo": "interno", "nombre": "Jurídica" }
+      }
+    ]
+  }
+}
+```
+
+**Ejemplo**
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:3000/reportes/usuarios?activo=semana&buscar=maria"
+```
+
+### GET /reportes/usuarios/:usuarioId/actividad
+
+**Descripción:** Actividad detallada del usuario: expedientes creados, movimientos realizados y auditoría (si aplica).
+El acceso está restringido: el propio usuario o admin/supervisor.
+
+**Query params**
+- _Fechas_: desde, hasta (YYYY-MM-DD) o rango ∈ hoy|semana|mes
+- _Secciones_: incluir CSV (ej. creados,movimientos,auditoria)
+- _Paginación_: limit (≤ 200), offset (≥ 0)
+
+**Ejemplo**
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:3000/reportes/usuarios/3/actividad?rango=semana&incluir=creados,movimientos&limit=10&offset=0"
+```
+
+---
+
 ## Auditoría y Logs
 
-* Auditoría completa: Todas las acciones de creación, edición y borrado de expedientes, movimientos, usuarios y unidades quedan registradas (quién, cuándo, IP, acción y detalle).
-* Intentos de login: Todos los intentos de login (exitosos, fallidos, bloqueados) quedan registrados (usuario, IP, motivo, timestamp).
+- Auditoría completa: Todas las acciones de creación, edición y borrado de expedientes, movimientos, usuarios y unidades quedan registradas (quién, cuándo, IP, acción y detalle).
+- Intentos de login: Todos los intentos de login (exitosos, fallidos, bloqueados) quedan registrados (usuario, IP, motivo, timestamp).
 
 ---
 
 ## ✅ Validaciones
 
-* Todas las entradas pasan por express-validator.
-* Campos obligatorios, formatos, opciones válidas (urgencia, tipo de unidad, etc).
-* Errores claros y uniformes.
+- Todas las entradas pasan por express-validator.
+- Campos obligatorios, formatos, opciones válidas (urgencia, tipo de unidad, etc).
+- Errores claros y uniformes.
 
 ---
 
@@ -251,13 +366,14 @@ Todas las respuestas siguen el formato:
   "datos": {}
 }
 ```
+
 ---
 
 ## 📑 Documentación Swagger (OpenAPI)
 
-* Acceso: http://localhost:3000/api-docs
-* Documentación interactiva y actualizada de todos los endpoints, ejemplos y schemas detallados.
-* Refleja todos los cambios de auditoría, seguridad, filtros y validaciones.
+- Acceso: http://localhost:3000/api-docs
+- Documentación interactiva y actualizada de todos los endpoints, ejemplos y schemas detallados.
+- Refleja todos los cambios de auditoría, seguridad, filtros y validaciones.
 
 ---
 
@@ -280,6 +396,7 @@ DB_NAME=expedientes_db
 npm install
 npm start # o node src/server.js
 ```
+
 │ Nota: En producción, usá migraciones (sequelize-cli db:migrate).
 │ sequelize.sync() debe usarse solo en desarrollo.
 
@@ -287,8 +404,8 @@ npm start # o node src/server.js
 
 ## 🧑‍💻 Tests automáticos
 
-* Tests con Jest/Supertest para rutas, roles, validaciones y auditoría.
-* Cobertura de flujos críticos y errores.
+- Tests con Jest/Supertest para rutas, roles, validaciones y auditoría.
+- Cobertura de flujos críticos y errores.
 
 ---
 

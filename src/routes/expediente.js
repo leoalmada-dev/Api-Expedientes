@@ -17,7 +17,7 @@ const {
  * @swagger
  * tags:
  *   name: Expedientes
- *   description: Gestión de expedientes y sus movimientos
+ *   description: Gestión y consulta de expedientes
  */
 
 /**
@@ -25,54 +25,89 @@ const {
  * /expedientes:
  *   get:
  *     summary: Listar expedientes
+ *     description: Devuelve el listado de expedientes con filtros opcionales por fecha, estado, urgencia y otros campos. 
  *     tags: [Expedientes]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: tipo_documento
- *         schema:
- *           type: string
- *         description: Filtrar por tipo de documento (oficio, apia, memo, fisico)
- *       - in: query
  *         name: fecha_desde
  *         schema:
  *           type: string
  *           format: date
- *         description: Fecha inicial (YYYY-MM-DD)
+ *         description: Fecha de ingreso desde (incluida)
  *       - in: query
  *         name: fecha_hasta
  *         schema:
  *           type: string
  *           format: date
- *         description: Fecha final (YYYY-MM-DD)
+ *         description: Fecha de ingreso hasta (incluida)
  *       - in: query
  *         name: estado
  *         schema:
  *           type: string
  *           enum: [abierto, cerrado]
- *         description: Filtrar por estado del expediente
  *       - in: query
- *         name: eliminados
+ *         name: urgencia
+ *         schema:
+ *           type: string
+ *           enum: [comun, urgente]
+ *       - in: query
+ *         name: tipo_documento
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: forma_ingreso
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: referencia
+ *         schema:
+ *           type: string
+ *           maxLength: 200
+ *         description: Búsqueda parcial por referencia
+ *       - in: query
+ *         name: eliminado
  *         schema:
  *           type: boolean
- *         description: Solo para supervisor, mostrar eliminados
+ *         description: Incluir eliminados (según permisos)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *           maximum: 200
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *       - in: query
+ *         name: orderBy
+ *         schema:
+ *           type: string
+ *           enum: [fecha_ingreso, fecha_cierre, urgencia, estado, id]
+ *           default: fecha_ingreso
+ *       - in: query
+ *         name: orderDir
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
  *     responses:
  *       200:
- *         description: Lista de expedientes
+ *         description: OK
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                 mensaje:
- *                   type: string
- *                 datos:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Expediente'
+ *               $ref: '#/components/schemas/ExpedienteListResponse'
+ *       401:
+ *         description: Token inválido o ausente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: No autorizado
  *         content:

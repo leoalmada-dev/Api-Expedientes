@@ -16,7 +16,7 @@ Rol.hasMany(Usuario, { foreignKey: 'rolId' });
 
 Expediente.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creador' });
 
-Expediente.hasMany(Movimiento, { foreignKey: 'expedienteId' });
+Expediente.hasMany(Movimiento, { foreignKey: 'expedienteId', as: 'Movimientos' });
 Movimiento.belongsTo(Expediente, { foreignKey: 'expedienteId' });
 
 Movimiento.belongsTo(Unidad, { foreignKey: 'unidadDestinoId', as: 'unidadDestino' });
